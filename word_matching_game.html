@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Word Matching Game with Two Columns</title>
+    <title>Finnish Word Matching Game</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         body {
@@ -13,182 +13,196 @@
             margin: 0;
             padding: 20px;
         }
-        .word-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr; /* 两列布局，芬兰语和英语 */
-            gap: 20px;
-            justify-items: center;
+        .game-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
             margin-top: 20px;
         }
-        .word-column {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        .word-card {
+        .card {
             width: 150px;
-            padding: 20px;
+            height: 50px;
             background-color: #ffffff;
             border: 2px solid #0038A8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1em;
             cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        .selected {
-            background-color: #0038A8;
-            color: #ffffff;
         }
         .matched {
-            background-color: #00cc66;
-            color: #ffffff;
-            cursor: default;
-        }
-        .pagination {
-            margin-top: 20px;
+            background-color: #90ee90;
+            pointer-events: none;
         }
     </style>
 </head>
 <body>
-    <h1>Word Matching Game</h1>
-    <p>Upload an Excel (.xlsx) file with Finnish words in the first column and English translations in the second column.</p>
-    <input type="file" id="fileUpload" accept=".xlsx" /><br><br>
-    <button onclick="startGame()">Start Matching Game</button>
-    <div class="word-container" id="word-container">
-        <div class="word-column" id="finnish-column"></div>
-        <div class="word-column" id="english-column"></div>
-    </div>
-    <div class="pagination" id="pagination">
-        <button onclick="prevPage()" id="prevButton" disabled>Previous Page</button>
-        <button onclick="nextPage()" id="nextButton" disabled>Next Page</button>
-    </div>
+    <h1>Finnish Word Matching Game</h1>
+    <p>Select an Excel (.xlsx) file from your local device or from the available list below to start playing.</p>
+    <input type="file" id="fileUpload" accept=".xlsx"><br><br>
+    <button onclick="fetchGitHubFiles()">Load Files from GitHub Repository</button>
+    <select id="fileSelect">
+        <option value="">Select a file from GitHub...</option>
+    </select>
+    <br><br>
+    <button onclick="startGame()">Start Game</button>
+    <div class="game-container" id="game-container"></div>
 
     <script>
         let words = [];
-        let currentPage = 0;
-        const itemsPerPage = 5;
+        let cards = [];
+        let selectedCards = [];
 
+        // Event listener for local file upload
         document.getElementById('fileUpload').addEventListener('change', function(event) {
             const file = event.target.files[0];
             if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    const firstSheetName = workbook.SheetNames[0];
-                    const worksheet = workbook.Sheets[firstSheetName];
-                    const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-
-                    words = rows.map(row => {
-                        const [finnish, english] = row;
-                        if (finnish && english) {
-                            return { finnish: finnish.trim(), english: english.trim() };
-                        }
-                    }).filter(pair => pair); // 过滤掉任何无效条目
-                };
-                reader.readAsArrayBuffer(file);
+                readExcelFile(file);
             }
         });
 
+        // Function to fetch file list from GitHub repository
+        async function fetchGitHubFiles() {
+            const repoUrl = 'https://api.github.com/repos/SylviaPotter/finnish-space/contents/';
+            try {
+                const response = await fetch(repoUrl);
+                if (!response.ok) {
+                    throw new Error("Network response was not ok");
+                }
+                const files = await response.json();
+                const fileSelect = document.getElementById('fileSelect');
+                fileSelect.innerHTML = '<option value="">Select a file from GitHub...</option>';
+                files.forEach(file => {
+                    if (file.name.endsWith('.xlsx')) {
+                        const option = document.createElement('option');
+                        option.value = file.download_url; // Set the download URL as the value
+                        option.textContent = file.name;
+                        fileSelect.appendChild(option);
+                    }
+                });
+            } catch (error) {
+                console.error("Error fetching files from GitHub:", error);
+                alert("There was an error fetching files from the GitHub repository.");
+            }
+        }
+
+        // Function to start the game by loading the selected file
+        async function startGame() {
+            const fileUrl = document.getElementById('fileSelect').value;
+
+            if (fileUrl) {
+                try {
+                    const response = await fetch(fileUrl);
+                    if (!response.ok) {
+                        throw new Error("Network response was not ok");
+                    }
+
+                    const arrayBuffer = await response.arrayBuffer();
+                    readExcelBuffer(arrayBuffer);
+                } catch (error) {
+                    console.error("Error fetching or processing the file:", error);
+                    alert("There was an error fetching or processing the file.");
+                }
+            } else if (words.length === 0) {
+                alert("Please upload a valid file or select one from GitHub first.");
+            } else {
+                setupGame();
+            }
+        }
+
+        // Function to read Excel file from local upload
+        function readExcelFile(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                readExcelBuffer(data);
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // Function to read Excel file buffer from GitHub or local upload
+        function readExcelBuffer(buffer) {
+            const workbook = XLSX.read(buffer, { type: 'array' });
+            const firstSheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[firstSheetName];
+            const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+            words = rows.map(row => {
+                const [finnish, english] = row;
+                if (finnish && english) {
+                    return { finnish: finnish.trim(), english: english.trim() };
+                }
+            }).filter(pair => pair); // 过滤掉任何无效条目
+
+            setupGame();
+        }
+
+        // Function to set up the game board
+        function setupGame() {
+            const gameContainer = document.getElementById('game-container');
+            gameContainer.innerHTML = '';
+
+            // Prepare cards
+            cards = [];
+            words.forEach(pair => {
+                cards.push({ text: pair.finnish, language: 'finnish', pair: pair });
+                cards.push({ text: pair.english, language: 'english', pair: pair });
+            });
+
+            // Shuffle cards
+            cards = shuffle(cards);
+
+            // Render cards
+            cards.forEach((card, index) => {
+                const cardElement = document.createElement('div');
+                cardElement.classList.add('card');
+                cardElement.textContent = card.text;
+                cardElement.dataset.index = index;
+                cardElement.onclick = () => selectCard(index);
+                gameContainer.appendChild(cardElement);
+            });
+        }
+
+        // Shuffle function to randomize cards
         function shuffle(array) {
             return array.sort(() => Math.random() - 0.5);
         }
 
-        function startGame() {
-            if (words.length === 0) {
-                alert("Please upload a valid word list first.");
-                return;
-            }
+        // Handle card selection
+        function selectCard(index) {
+            const cardElement = document.querySelector(`.card[data-index='${index}']`);
+            if (selectedCards.length < 2 && !cardElement.classList.contains('matched')) {
+                cardElement.classList.add('selected');
+                selectedCards.push(index);
 
-            words = shuffle(words);
-            currentPage = 0;
-            renderPage();
-            updatePaginationButtons();
-        }
-
-        function renderPage() {
-            const finnishColumn = document.getElementById('finnish-column');
-            const englishColumn = document.getElementById('english-column');
-            finnishColumn.innerHTML = '';
-            englishColumn.innerHTML = '';
-
-            const start = currentPage * itemsPerPage;
-            const end = Math.min(start + itemsPerPage, words.length);
-            let pageWords = words.slice(start, end);
-
-            // For each word pair, create Finnish and English cards separately in different columns
-            pageWords.forEach(pair => {
-                // Create Finnish word card
-                const finnishCard = document.createElement('div');
-                finnishCard.classList.add('word-card');
-                finnishCard.textContent = pair.finnish;
-                finnishCard.dataset.matchId = pair.finnish;
-
-                // Create English word card
-                const englishCard = document.createElement('div');
-                englishCard.classList.add('word-card');
-                englishCard.textContent = pair.english;
-                englishCard.dataset.matchId = pair.finnish;
-
-                // Append cards to respective columns
-                finnishColumn.appendChild(finnishCard);
-                englishColumn.appendChild(englishCard);
-            });
-
-            // Shuffle the cards within each column for randomness
-            shuffleColumnCards(finnishColumn);
-            shuffleColumnCards(englishColumn);
-            addClickEvents();
-        }
-
-        function shuffleColumnCards(column) {
-            for (let i = column.children.length; i >= 0; i--) {
-                column.appendChild(column.children[Math.random() * i | 0]);
+                if (selectedCards.length === 2) {
+                    checkMatch();
+                }
             }
         }
 
-        function addClickEvents() {
-            let selectedCard = null;
-            document.querySelectorAll('.word-card').forEach(card => {
-                card.addEventListener('click', function() {
-                    if (card.classList.contains('matched') || card === selectedCard) {
-                        return; // 忽略已匹配或已选中的卡片
-                    }
+        // Check if the selected cards match
+        function checkMatch() {
+            const [index1, index2] = selectedCards;
+            const card1 = cards[index1];
+            const card2 = cards[index2];
 
-                    card.classList.add('selected');
-
-                    if (!selectedCard) {
-                        selectedCard = card;
-                    } else {
-                        if (selectedCard.dataset.matchId === card.dataset.matchId) {
-                            selectedCard.classList.add('matched');
-                            card.classList.add('matched');
-                        }
-                        selectedCard.classList.remove('selected');
-                        card.classList.remove('selected');
-                        selectedCard = null;
-                    }
-                });
-            });
-        }
-
-        function updatePaginationButtons() {
-            document.getElementById('prevButton').disabled = currentPage === 0;
-            document.getElementById('nextButton').disabled = (currentPage + 1) * itemsPerPage >= words.length;
-        }
-
-        function nextPage() {
-            if ((currentPage + 1) * itemsPerPage < words.length) {
-                currentPage++;
-                renderPage();
-                updatePaginationButtons();
+            if (
+                (card1.language === 'finnish' && card2.language === 'english' && card1.pair === card2.pair) ||
+                (card1.language === 'english' && card2.language === 'finnish' && card1.pair === card2.pair)
+            ) {
+                // Cards match
+                document.querySelector(`.card[data-index='${index1}']`).classList.add('matched');
+                document.querySelector(`.card[data-index='${index2}']`).classList.add('matched');
             }
-        }
 
-        function prevPage() {
-            if (currentPage > 0) {
-                currentPage--;
-                renderPage();
-                updatePaginationButtons();
-            }
+            // Deselect cards after checking
+            setTimeout(() => {
+                document.querySelector(`.card[data-index='${index1}']`).classList.remove('selected');
+                document.querySelector(`.card[data-index='${index2}']`).classList.remove('selected');
+                selectedCards = [];
+            }, 1000);
         }
     </script>
 </body>
