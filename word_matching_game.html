@@ -14,26 +14,27 @@
             padding: 20px;
         }
         .game-container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
             gap: 10px;
+            max-width: 800px;
+            margin: 0 auto;
             margin-top: 20px;
         }
         .card {
-            width: 150px;
-            height: 50px;
+            padding: 15px;
             background-color: #ffffff;
             border: 2px solid #0038A8;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 1em;
+            text-align: center;
             cursor: pointer;
+            font-size: 1em;
         }
         .matched {
             background-color: #90ee90;
             pointer-events: none;
+        }
+        .pagination {
+            margin-top: 20px;
         }
     </style>
 </head>
@@ -48,9 +49,15 @@
     <br><br>
     <button onclick="startGame()">Start Game</button>
     <div class="game-container" id="game-container"></div>
+    <div class="pagination" id="pagination">
+        <button onclick="prevPage()" id="prevButton" disabled>Previous Page</button>
+        <button onclick="nextPage()" id="nextButton" disabled>Next Page</button>
+    </div>
 
     <script>
         let words = [];
+        let currentPage = 0;
+        const itemsPerPage = 10;
         let cards = [];
         let selectedCards = [];
 
@@ -107,7 +114,8 @@
             } else if (words.length === 0) {
                 alert("Please upload a valid file or select one from GitHub first.");
             } else {
-                setupGame();
+                renderPage();
+                updatePaginationButtons();
             }
         }
 
@@ -135,25 +143,33 @@
                 }
             }).filter(pair => pair); // 过滤掉任何无效条目
 
-            setupGame();
+            currentPage = 0;
+            renderPage();
+            updatePaginationButtons();
         }
 
-        // Function to set up the game board
-        function setupGame() {
+        // Function to shuffle cards for randomness
+        function shuffle(array) {
+            return array.sort(() => Math.random() - 0.5);
+        }
+
+        // Function to render the current page of cards
+        function renderPage() {
             const gameContainer = document.getElementById('game-container');
             gameContainer.innerHTML = '';
 
-            // Prepare cards
+            const start = currentPage * itemsPerPage;
+            const end = Math.min(start + itemsPerPage, words.length);
+            let pageWords = words.slice(start, end);
+
             cards = [];
-            words.forEach(pair => {
+            pageWords.forEach(pair => {
                 cards.push({ text: pair.finnish, language: 'finnish', pair: pair });
                 cards.push({ text: pair.english, language: 'english', pair: pair });
             });
 
-            // Shuffle cards
             cards = shuffle(cards);
 
-            // Render cards
             cards.forEach((card, index) => {
                 const cardElement = document.createElement('div');
                 cardElement.classList.add('card');
@@ -164,9 +180,28 @@
             });
         }
 
-        // Shuffle function to randomize cards
-        function shuffle(array) {
-            return array.sort(() => Math.random() - 0.5);
+        // Update pagination buttons based on current page
+        function updatePaginationButtons() {
+            document.getElementById('prevButton').disabled = currentPage === 0;
+            document.getElementById('nextButton').disabled = (currentPage + 1) * itemsPerPage >= words.length;
+        }
+
+        // Navigate to next page
+        function nextPage() {
+            if ((currentPage + 1) * itemsPerPage < words.length) {
+                currentPage++;
+                renderPage();
+                updatePaginationButtons();
+            }
+        }
+
+        // Navigate to previous page
+        function prevPage() {
+            if (currentPage > 0) {
+                currentPage--;
+                renderPage();
+                updatePaginationButtons();
+            }
         }
 
         // Handle card selection
