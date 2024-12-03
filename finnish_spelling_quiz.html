@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finnish Spelling Quiz</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f8ff;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+        }
+        .quiz-container {
+            margin-top: 20px;
+        }
+        .word-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .english-word {
+            font-size: 1.2em;
+            width: 30%;
+            text-align: left;
+        }
+        .input-box {
+            width: 60%;
+            padding: 10px;
+            border: 2px solid #0038A8;
+            font-size: 1em;
+            height: 40px;
+        }
+        .pagination {
+            margin-top: 20px;
+        }
+        #result-table {
+            margin-top: 20px;
+            width: 100%;
+            border-collapse: collapse;
+        }
+        #result-table th, #result-table td {
+            border: 1px solid #0038A8;
+            padding: 10px;
+            text-align: center;
+        }
+        #result {
+            margin-top: 20px;
+            font-size: 1.2em;
+        }
+    </style>
+</head>
+<body>
+    <h1>Finnish Spelling Quiz</h1>
+    <p>Select an Excel (.xlsx) file from the available list to start the quiz.</p>
+    <select id="fileSelect">
+        <option value="">Select a file...</option>
+        <option value="https://raw.githubusercontent.com/SylviaPotter/finnish-space/main/lesson1.xlsx">Lesson 1</option>
+        <option value="https://raw.githubusercontent.com/SylviaPotter/finnish-space/main/lesson2.xlsx">Lesson 2</option>
+        <!-- 在此处添加更多文件 -->
+    </select>
+    <br><br>
+    <button onclick="startQuiz()">Start Quiz</button>
+    <div class="quiz-container" id="quiz-container"></div>
+    <div class="pagination" id="pagination">
+        <button onclick="prevPage()" id="prevButton" disabled>Previous Page</button>
+        <button onclick="nextPage()" id="nextButton" disabled>Next Page</button>
+    </div>
+    <button onclick="submitAnswers()" id="submitButton" style="display: none;">Submit</button>
+    <div id="result"></div>
+
+    <script>
+        let words = [];
+        let currentPage = 0;
+        const itemsPerPage = 5;
+
+        async function startQuiz() {
+            const fileUrl = document.getElementById('fileSelect').value;
+            if (!fileUrl) {
+                alert("Please select a valid file first.");
+                return;
+            }
+
+            try {
+                const response = await fetch(fileUrl);
+                if (!response.ok) {
+                    throw new Error("Network response was not ok");
+                }
+
+                const arrayBuffer = await response.arrayBuffer();
+                const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+                words = rows.map(row => {
+                    const [finnish, english] = row;
+                    if (finnish && english) {
+                        return { finnish: finnish.trim(), english: english.trim(), userAnswer: "" };
+                    }
+                }).filter(pair => pair); // 过滤掉任何无效条目
+
+                words = shuffle(words);
+                currentPage = 0;
+                renderPage();
+                updatePaginationButtons();
+
+            } catch (error) {
+                console.error("Error fetching or processing the file:", error);
+                alert("There was an error fetching or processing the file.");
+            }
+        }
+
+        function shuffle(array) {
+            return array.sort(() => Math.random() - 0.5);
+        }
+
+        function renderPage() {
+            const quizContainer = document.getElementById('quiz-container');
+            quizContainer.innerHTML = '';
+
+            const start = currentPage * itemsPerPage;
+            const end = Math.min(start + itemsPerPage, words.length);
+            let pageWords = words.slice(start, end);
+
+            // For each word pair, create input fields for the user to type Finnish translation
+            pageWords.forEach((pair, index) => {
+                const wordRow = document.createElement('div');
+                wordRow.classList.add('word-row');
+
+                // English word display
+                const englishDiv = document.createElement('div');
+                englishDiv.classList.add('english-word');
+                englishDiv.textContent = pair.english;
+
+                // Input box for Finnish word
+                const inputBox = document.createElement('input');
+                inputBox.classList.add('input-box');
+                inputBox.dataset.index = start + index;
+                inputBox.value = pair.userAnswer;
+
+                // Append elements to the word row
+                wordRow.appendChild(englishDiv);
+                wordRow.appendChild(inputBox);
+
+                // Append the word row to the quiz container
+                quizContainer.appendChild(wordRow);
+            });
+
+            updatePaginationButtons();
+        }
+
+        function updatePaginationButtons() {
+            document.getElementById('prevButton').disabled = currentPage === 0;
+            document.getElementById('nextButton').disabled = (currentPage + 1) * itemsPerPage >= words.length;
+            document.getElementById('submitButton').style.display = (currentPage + 1) * itemsPerPage >= words.length ? 'block' : 'none';
+        }
+
+        function nextPage() {
+            saveUserAnswers();
+            if ((currentPage + 1) * itemsPerPage < words.length) {
+                currentPage++;
+                renderPage();
+            }
+        }
+
+        function prevPage() {
+            saveUserAnswers();
+            if (currentPage > 0) {
+                currentPage--;
+                renderPage();
+            }
+        }
+
+        function saveUserAnswers() {
+            const inputs = document.querySelectorAll('.input-box');
+            inputs.forEach(input => {
+                const index = parseInt(input.dataset.index, 10);
+                words[index].userAnswer = input.value.trim();
+            });
+        }
+
+        function submitAnswers() {
+            saveUserAnswers();
+
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = ''; // 清空之前的结果
+
+            let correctCount = 0;
+
+            // Create table to display results
+            const resultTable = document.createElement('table');
+            resultTable.id = 'result-table';
+
+            // Add table headers
+            const headerRow = document.createElement('tr');
+            headerRow.innerHTML = `
+                <th>English</th>
+                <th>Correct Answer</th>
+                <th>Your Answer</th>
+                <th>Result</th>
+            `;
+            resultTable.appendChild(headerRow);
+
+            // Fill in the table rows with answers and results
+            words.forEach(pair => {
+                const userAnswer = pair.userAnswer.toLowerCase();
+                const correctAnswer = pair.finnish.toLowerCase();
+
+                // Create a row for each word pair
+                const resultRow = document.createElement('tr');
+                resultRow.innerHTML = `
+                    <td>${pair.english}</td>
+                    <td>${pair.finnish}</td>
+                    <td>${pair.userAnswer}</td>
+                    <td>${userAnswer === correctAnswer ? '✔️' : '❌'}</td>
+                `;
+
+                // Count correct answers
+                if (userAnswer === correctAnswer) {
+                    correctCount++;
+                }
+
+                resultTable.appendChild(resultRow);
+            });
+
+            resultDiv.appendChild(resultTable);
+
+            // Calculate accuracy
+            const total = words.length;
+            const accuracy = ((correctCount / total) * 100).toFixed(2);
+            const accuracyResult = document.createElement('div');
+            accuracyResult.textContent = `Correct Answers: ${correctCount}/${total} (${accuracy}%)`;
+            resultDiv.appendChild(accuracyResult);
+        }
+    </script>
+</body>
+</html>
