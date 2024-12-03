@@ -15,7 +15,7 @@
         }
         .word-container {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr 1fr; /* Two-column layout: Finnish and English */
             gap: 20px;
             justify-items: center;
             margin-top: 20px;
@@ -50,8 +50,8 @@
 <body>
     <h1>Word Matching Game</h1>
     <p>Select an Excel (.xlsx) file from your local device or from the available list below.</p>
-    <input type="file" id="fileUpload" accept=".xlsx"><br><br>
-    <button onclick="fetchGitHubFiles()">Load Files from GitHub Repository</button>
+    <input type="file" id="fileUpload" accept=".xlsx" /><br><br>
+    <button onclick="fetchAllXlsxFiles()">Load Files from GitHub Repository</button>
     <select id="fileSelect">
         <option value="">Select a file from GitHub...</option>
     </select>
@@ -71,75 +71,124 @@
         let currentPage = 0;
         const itemsPerPage = 5;
 
-        // Event listener for local file upload
         document.getElementById('fileUpload').addEventListener('change', function(event) {
             const file = event.target.files[0];
             if (file) {
-                readExcelFile(file);
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+                    words = rows.map(row => {
+                        const [finnish, english] = row;
+                        if (finnish && english) {
+                            return { finnish: finnish.trim(), english: english.trim() };
+                        }
+                    }).filter(pair => pair); // Filter out any invalid entries
+                };
+                reader.readAsArrayBuffer(file);
             }
         });
 
-        // Function to fetch file list from GitHub repository
-        async function fetchGitHubFiles() {
-            const repoUrl = 'https://api.github.com/repos/SylviaPotter/finnish-space/contents/';
+        // Fetch all .xlsx files recursively from GitHub repository
+        const repoBaseUrl = 'https://api.github.com/repos/SylviaPotter/finnish-space/contents/';
+        const fileSelect = document.getElementById('fileSelect');
+
+        async function fetchAllXlsxFiles() {
+            fileSelect.innerHTML = '<option value="">Loading files...</option>'; // Show loading message
+            let allXlsxFiles = [];
+
+            // Start recursive fetching from the base URL
             try {
-                const response = await fetch(repoUrl);
-                if (!response.ok) {
-                    throw new Error("Network response was not ok");
-                }
-                const files = await response.json();
-                const fileSelect = document.getElementById('fileSelect');
-                fileSelect.innerHTML = '<option value="">Select a file from GitHub...</option>';
-                files.forEach(file => {
-                    if (file.name.endsWith('.xlsx')) {
-                        const option = document.createElement('option');
-                        option.value = file.download_url;
-                        option.textContent = file.name;
-                        fileSelect.appendChild(option);
-                    }
-                });
+                allXlsxFiles = await fetchXlsxFilesRecursive('');
+                populateFileSelect(allXlsxFiles);
             } catch (error) {
-                console.error("Error fetching files from GitHub:", error);
+                console.error("Error fetching files recursively:", error);
                 alert("There was an error fetching files from the GitHub repository.");
             }
         }
 
-        // Function to start the game by loading the selected file
-        async function startGame() {
+        // Recursive function to fetch .xlsx files from a given path
+        async function fetchXlsxFilesRecursive(path) {
+            const url = `${repoBaseUrl}${path}`;
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error("Network response was not ok");
+                }
+                const items = await response.json();
+                let xlsxFiles = [];
+
+                for (const item of items) {
+                    if (item.type === 'file' && item.name.endsWith('.xlsx')) {
+                        // If the item is a .xlsx file, add it to the list
+                        xlsxFiles.push(item);
+                    } else if (item.type === 'dir') {
+                        // If the item is a directory, fetch its contents recursively
+                        const subDirFiles = await fetchXlsxFilesRecursive(item.path);
+                        xlsxFiles = xlsxFiles.concat(subDirFiles);
+                    }
+                }
+
+                return xlsxFiles;
+            } catch (error) {
+                console.error(`Error fetching content from ${url}:`, error);
+                return [];
+            }
+        }
+
+        // Populate the select dropdown with the fetched .xlsx files
+        function populateFileSelect(files) {
+            fileSelect.innerHTML = '<option value="">Select a file from GitHub...</option>';
+            files.forEach(file => {
+                const option = document.createElement('option');
+                option.value = file.download_url;
+                option.textContent = file.path; // Use file path to provide context of where the file is located
+                fileSelect.appendChild(option);
+            });
+        }
+
+        function shuffle(array) {
+            return array.sort(() => Math.random() - 0.5);
+        }
+
+        function startGame() {
             const fileUrl = document.getElementById('fileSelect').value;
 
             if (fileUrl) {
-                try {
-                    const response = await fetch(fileUrl);
-                    if (!response.ok) {
-                        throw new Error("Network response was not ok");
-                    }
-
-                    const arrayBuffer = await response.arrayBuffer();
-                    readExcelBuffer(arrayBuffer);
-                } catch (error) {
-                    console.error("Error fetching or processing the file:", error);
-                    alert("There was an error fetching or processing the file.");
-                }
+                fetchFileAndStartGame(fileUrl);
             } else if (words.length === 0) {
-                alert("Please upload a valid file or select one from GitHub first.");
+                alert("Please upload a valid word list first.");
             } else {
+                words = shuffle(words);
+                currentPage = 0;
                 renderPage();
                 updatePaginationButtons();
             }
         }
 
-        // Function to read Excel file from local upload
-        function readExcelFile(file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const data = new Uint8Array(e.target.result);
-                readExcelBuffer(data);
-            };
-            reader.readAsArrayBuffer(file);
+        // Fetch selected file from GitHub and start the game
+        async function fetchFileAndStartGame(fileUrl) {
+            try {
+                const response = await fetch(fileUrl);
+                if (!response.ok) {
+                    throw new Error("Network response was not ok");
+                }
+                const arrayBuffer = await response.arrayBuffer();
+                readExcelBuffer(arrayBuffer);
+                words = shuffle(words);
+                currentPage = 0;
+                renderPage();
+                updatePaginationButtons();
+            } catch (error) {
+                console.error("Error fetching or processing the file:", error);
+                alert("There was an error fetching or processing the file.");
+            }
         }
 
-        // Function to read Excel file buffer from GitHub or local upload
         function readExcelBuffer(buffer) {
             const workbook = XLSX.read(buffer, { type: 'array' });
             const firstSheetName = workbook.SheetNames[0];
@@ -151,16 +200,7 @@
                 if (finnish && english) {
                     return { finnish: finnish.trim(), english: english.trim() };
                 }
-            }).filter(pair => pair);
-
-            words = shuffle(words);
-            currentPage = 0;
-            renderPage();
-            updatePaginationButtons();
-        }
-
-        function shuffle(array) {
-            return array.sort(() => Math.random() - 0.5);
+            }).filter(pair => pair); // Filter out any invalid entries
         }
 
         function renderPage() {
@@ -173,21 +213,26 @@
             const end = Math.min(start + itemsPerPage, words.length);
             let pageWords = words.slice(start, end);
 
+            // For each word pair, create Finnish and English cards separately in different columns
             pageWords.forEach(pair => {
+                // Create Finnish word card
                 const finnishCard = document.createElement('div');
                 finnishCard.classList.add('word-card');
                 finnishCard.textContent = pair.finnish;
                 finnishCard.dataset.matchId = pair.finnish;
 
+                // Create English word card
                 const englishCard = document.createElement('div');
                 englishCard.classList.add('word-card');
                 englishCard.textContent = pair.english;
                 englishCard.dataset.matchId = pair.finnish;
 
+                // Append cards to respective columns
                 finnishColumn.appendChild(finnishCard);
                 englishColumn.appendChild(englishCard);
             });
 
+            // Shuffle the cards within each column for randomness
             shuffleColumnCards(finnishColumn);
             shuffleColumnCards(englishColumn);
             addClickEvents();
@@ -204,7 +249,7 @@
             document.querySelectorAll('.word-card').forEach(card => {
                 card.addEventListener('click', function() {
                     if (card.classList.contains('matched') || card === selectedCard) {
-                        return;
+                        return; // Ignore already matched or re-selected cards
                     }
 
                     card.classList.add('selected');
