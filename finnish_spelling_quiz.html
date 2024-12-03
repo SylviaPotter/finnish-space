@@ -57,7 +57,7 @@
     <h1>Finnish Spelling Quiz</h1>
     <p>Select an Excel (.xlsx) file from your local device or from the available list below.</p>
     <input type="file" id="fileUpload" accept=".xlsx"><br><br>
-    <button onclick="fetchGitHubFiles()">Load Files from GitHub Repository</button>
+    <button onclick="fetchAllXlsxFiles()">Load Files from GitHub Repository</button>
     <select id="fileSelect">
         <option value="">Select a file from GitHub...</option>
     </select>
@@ -84,29 +84,62 @@
             }
         });
 
-        // Function to fetch file list from GitHub repository
-        async function fetchGitHubFiles() {
-            const repoUrl = 'https://api.github.com/repos/SylviaPotter/finnish-space/contents/';
+        // Function to fetch all .xlsx files recursively from GitHub repository
+        const repoBaseUrl = 'https://api.github.com/repos/SylviaPotter/finnish-space/contents/';
+        const fileSelect = document.getElementById('fileSelect');
+
+        async function fetchAllXlsxFiles() {
+            fileSelect.innerHTML = '<option value="">Loading files...</option>'; // Show loading message
+            let allXlsxFiles = [];
+
+            // Start recursive fetching from the base URL
             try {
-                const response = await fetch(repoUrl);
+                allXlsxFiles = await fetchXlsxFilesRecursive('');
+                populateFileSelect(allXlsxFiles);
+            } catch (error) {
+                console.error("Error fetching files recursively:", error);
+                alert("There was an error fetching files from the GitHub repository.");
+            }
+        }
+
+        // Recursive function to fetch .xlsx files from a given path
+        async function fetchXlsxFilesRecursive(path) {
+            const url = `${repoBaseUrl}${path}`;
+            try {
+                const response = await fetch(url);
                 if (!response.ok) {
                     throw new Error("Network response was not ok");
                 }
-                const files = await response.json();
-                const fileSelect = document.getElementById('fileSelect');
-                fileSelect.innerHTML = '<option value="">Select a file from GitHub...</option>';
-                files.forEach(file => {
-                    if (file.name.endsWith('.xlsx')) {
-                        const option = document.createElement('option');
-                        option.value = file.download_url; // Set the download URL as the value
-                        option.textContent = file.name;
-                        fileSelect.appendChild(option);
+                const items = await response.json();
+                let xlsxFiles = [];
+
+                for (const item of items) {
+                    if (item.type === 'file' && item.name.endsWith('.xlsx')) {
+                        // If the item is a .xlsx file, add it to the list
+                        xlsxFiles.push(item);
+                    } else if (item.type === 'dir') {
+                        // If the item is a directory, fetch its contents recursively
+                        const subDirFiles = await fetchXlsxFilesRecursive(item.path);
+                        xlsxFiles = xlsxFiles.concat(subDirFiles);
                     }
-                });
+                }
+
+                return xlsxFiles;
             } catch (error) {
-                console.error("Error fetching files from GitHub:", error);
-                alert("There was an error fetching files from the GitHub repository.");
+                console.error(`Error fetching content from ${url}:`, error);
+                return [];
             }
+        }
+
+        // Populate the select dropdown with the fetched .xlsx files
+        function populateFileSelect(files) {
+            fileSelect.innerHTML = '<option value="">Select a file from GitHub...</option>';
+            files.forEach(file => {
+                const option = document.createElement('option');
+                option.value = file.download_url;
+                option.textContent = file.path; // Use file path to provide context of where the file is located
+                fileSelect.appendChild(option);
+            });
         }
 
         // Function to start the quiz by loading the selected file
@@ -156,7 +189,7 @@
                 if (finnish && english) {
                     return { finnish: finnish.trim(), english: english.trim(), userAnswer: "" };
                 }
-            }).filter(pair => pair); // 过滤掉任何无效条目
+            }).filter(pair => pair); // Filter out any invalid entries
 
             words = shuffle(words);
             currentPage = 0;
@@ -226,7 +259,7 @@
             saveUserAnswers();
 
             const resultDiv = document.getElementById('result');
-            resultDiv.innerHTML = ''; // 清空之前的结果
+            resultDiv.innerHTML = ''; // Clear previous results
 
             let correctCount = 0;
 
