@@ -55,12 +55,11 @@
 </head>
 <body>
     <h1>Finnish Spelling Quiz</h1>
-    <p>Select an Excel (.xlsx) file from the available list to start the quiz.</p>
+    <p>Select an Excel (.xlsx) file from your local device or from the available list below.</p>
+    <input type="file" id="fileUpload" accept=".xlsx"><br><br>
+    <button onclick="fetchGitHubFiles()">Load Files from GitHub Repository</button>
     <select id="fileSelect">
-        <option value="">Select a file...</option>
-        <option value="https://raw.githubusercontent.com/SylviaPotter/finnish-space/main/lesson1.xlsx">Lesson 1</option>
-        <option value="https://raw.githubusercontent.com/SylviaPotter/finnish-space/main/lesson2.xlsx">Lesson 2</option>
-        <!-- 在此处添加更多文件 -->
+        <option value="">Select a file from GitHub...</option>
     </select>
     <br><br>
     <button onclick="startQuiz()">Start Quiz</button>
@@ -77,47 +76,100 @@
         let currentPage = 0;
         const itemsPerPage = 5;
 
-        async function startQuiz() {
-            const fileUrl = document.getElementById('fileSelect').value;
-            if (!fileUrl) {
-                alert("Please select a valid file first.");
-                return;
+        // Event listener for local file upload
+        document.getElementById('fileUpload').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                readExcelFile(file);
             }
+        });
 
+        // Function to fetch file list from GitHub repository
+        async function fetchGitHubFiles() {
+            const repoUrl = 'https://api.github.com/repos/SylviaPotter/finnish-space/contents/';
             try {
-                const response = await fetch(fileUrl);
+                const response = await fetch(repoUrl);
                 if (!response.ok) {
                     throw new Error("Network response was not ok");
                 }
-
-                const arrayBuffer = await response.arrayBuffer();
-                const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-                const firstSheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[firstSheetName];
-                const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-
-                words = rows.map(row => {
-                    const [finnish, english] = row;
-                    if (finnish && english) {
-                        return { finnish: finnish.trim(), english: english.trim(), userAnswer: "" };
+                const files = await response.json();
+                const fileSelect = document.getElementById('fileSelect');
+                fileSelect.innerHTML = '<option value="">Select a file from GitHub...</option>';
+                files.forEach(file => {
+                    if (file.name.endsWith('.xlsx')) {
+                        const option = document.createElement('option');
+                        option.value = file.download_url; // Set the download URL as the value
+                        option.textContent = file.name;
+                        fileSelect.appendChild(option);
                     }
-                }).filter(pair => pair); // 过滤掉任何无效条目
-
-                words = shuffle(words);
-                currentPage = 0;
-                renderPage();
-                updatePaginationButtons();
-
+                });
             } catch (error) {
-                console.error("Error fetching or processing the file:", error);
-                alert("There was an error fetching or processing the file.");
+                console.error("Error fetching files from GitHub:", error);
+                alert("There was an error fetching files from the GitHub repository.");
             }
         }
 
+        // Function to start the quiz by loading the selected file
+        async function startQuiz() {
+            const fileUrl = document.getElementById('fileSelect').value;
+
+            if (fileUrl) {
+                try {
+                    const response = await fetch(fileUrl);
+                    if (!response.ok) {
+                        throw new Error("Network response was not ok");
+                    }
+
+                    const arrayBuffer = await response.arrayBuffer();
+                    readExcelBuffer(arrayBuffer);
+                } catch (error) {
+                    console.error("Error fetching or processing the file:", error);
+                    alert("There was an error fetching or processing the file.");
+                }
+            } else if (words.length === 0) {
+                alert("Please upload a valid file or select one from GitHub first.");
+            } else {
+                renderPage();
+                updatePaginationButtons();
+            }
+        }
+
+        // Function to read Excel file from local upload
+        function readExcelFile(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                readExcelBuffer(data);
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // Function to read Excel file buffer from GitHub or local upload
+        function readExcelBuffer(buffer) {
+            const workbook = XLSX.read(buffer, { type: 'array' });
+            const firstSheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[firstSheetName];
+            const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+            words = rows.map(row => {
+                const [finnish, english] = row;
+                if (finnish && english) {
+                    return { finnish: finnish.trim(), english: english.trim(), userAnswer: "" };
+                }
+            }).filter(pair => pair); // 过滤掉任何无效条目
+
+            words = shuffle(words);
+            currentPage = 0;
+            renderPage();
+            updatePaginationButtons();
+        }
+
+        // Shuffle function to randomize words
         function shuffle(array) {
             return array.sort(() => Math.random() - 0.5);
         }
 
+        // Render page with current words
         function renderPage() {
             const quizContainer = document.getElementById('quiz-container');
             quizContainer.innerHTML = '';
@@ -153,28 +205,14 @@
             updatePaginationButtons();
         }
 
+        // Update pagination buttons based on current page
         function updatePaginationButtons() {
             document.getElementById('prevButton').disabled = currentPage === 0;
             document.getElementById('nextButton').disabled = (currentPage + 1) * itemsPerPage >= words.length;
             document.getElementById('submitButton').style.display = (currentPage + 1) * itemsPerPage >= words.length ? 'block' : 'none';
         }
 
-        function nextPage() {
-            saveUserAnswers();
-            if ((currentPage + 1) * itemsPerPage < words.length) {
-                currentPage++;
-                renderPage();
-            }
-        }
-
-        function prevPage() {
-            saveUserAnswers();
-            if (currentPage > 0) {
-                currentPage--;
-                renderPage();
-            }
-        }
-
+        // Save user answers for the current page
         function saveUserAnswers() {
             const inputs = document.querySelectorAll('.input-box');
             inputs.forEach(input => {
@@ -183,6 +221,7 @@
             });
         }
 
+        // Handle submit button click to evaluate answers
         function submitAnswers() {
             saveUserAnswers();
 
