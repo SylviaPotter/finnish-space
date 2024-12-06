@@ -244,6 +244,25 @@
         right: 5px;
         border-bottom-color: #000;
     }
+
+    .wordlist-usage-container {
+        text-align: center;
+    }
+
+    .wordlist-usage-container h4 {
+        margin-top: 1rem;
+    }
+
+    .wordlist-usage-list {
+        display: inline-block;
+        text-align: left;
+        background: #eee;
+        padding: 1rem;
+        border-radius: 5px;
+    }
+    .wordlist-usage-list p {
+        margin: 0.5rem 0;
+    }
 </style>
 <!-- 引入SheetJS解析库 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -330,6 +349,11 @@
         <div class="progress-bar-container">
             <div class="progress-bar" id="progress-bar">0%</div>
         </div>
+
+        <div class="wordlist-usage-container" id="wordlist-usage-container">
+            <h4>Wordlist Study Frequency</h4>
+            <div class="wordlist-usage-list" id="wordlist-usage-list"></div>
+        </div>
     </section>
 </main>
 
@@ -343,7 +367,8 @@ let defaultData = {
     masteredCount: 0,
     streakCount: 0,
     lastCheckinDay: null,
-    checkinData: {}
+    checkinData: {},
+    wordlistUsage: {} // 新增，用来记录每个词库的学习次数
 };
 
 function loadData() {
@@ -365,6 +390,7 @@ const intervals = [1,2,4,7,15,30];
 let wordlist = []; // Will hold {fi: '', en: ''} objects
 let selectedWords = [];
 let allPassed = false;
+let currentWordlistFile = null; // 用来记录当前加载的词库文件名或路径
 
 const repoBaseUrl = 'https://api.github.com/repos/SylviaPotter/finnish-space/contents/';
 const fileSelect = document.getElementById('fileSelect');
@@ -449,6 +475,7 @@ async function importFromSelectedJson() {
             msg.textContent = "Import successful! Your progress is now updated.";
             renderCalendar();
             renderAchievements();
+            renderWordlistUsage();
         } else {
             msg.textContent = "Import failed: JSON format incorrect.";
         }
@@ -469,6 +496,7 @@ async function startGame() {
     }
 
     loadMsg.textContent = "Loading wordlist...";
+    currentWordlistFile = fileSelect.options[fileSelect.selectedIndex].textContent;
 
     try {
         const response = await fetch(fileUrl);
@@ -558,8 +586,6 @@ function renderTestItems() {
     const testContainer = document.getElementById('test-container');
     testContainer.innerHTML = '';
 
-    // selectedWords: user chosen difficult words
-    // We'll show their Finnish words and ask for their English meaning
     selectedWords.forEach(w => {
         let div = document.createElement('div');
         div.className = 'test-item';
@@ -629,8 +655,9 @@ checkinBtn.addEventListener('click', () => {
     let today = new Date();
     let todayKey = today.toISOString().split('T')[0];
 
+    // 改为存储对象，而不是简单的true
     if (!learningData.checkinData[todayKey]) {
-        learningData.checkinData[todayKey] = true;
+        learningData.checkinData[todayKey] = {checkedIn:true, wordlists:[]};
         if (learningData.lastCheckinDay) {
             let lastDate = new Date(learningData.lastCheckinDay);
             let diff = (today - lastDate)/(1000*60*60*24);
@@ -643,13 +670,25 @@ checkinBtn.addEventListener('click', () => {
             learningData.streakCount = 1;
         }
         learningData.lastCheckinDay = todayKey;
-        saveData(learningData);
-        checkinMessage.textContent = `Check-in successful! Streak: ${learningData.streakCount}`;
-        renderCalendar();
-        renderAchievements();
-    } else {
-        checkinMessage.textContent = `Already checked in today! Streak: ${learningData.streakCount}`;
     }
+
+    // 记录当前使用的词库到当天的data和wordlistUsage
+    if (currentWordlistFile) {
+        if (!learningData.checkinData[todayKey].wordlists.includes(currentWordlistFile)) {
+            learningData.checkinData[todayKey].wordlists.push(currentWordlistFile);
+        }
+
+        if (!learningData.wordlistUsage[currentWordlistFile]) {
+            learningData.wordlistUsage[currentWordlistFile] = 0;
+        }
+        learningData.wordlistUsage[currentWordlistFile]++;
+    }
+
+    saveData(learningData);
+    checkinMessage.textContent = `Check-in successful! Streak: ${learningData.streakCount}`;
+    renderCalendar();
+    renderAchievements();
+    renderWordlistUsage();
 });
 
 function renderCalendar() {
@@ -673,7 +712,7 @@ function renderCalendar() {
         cell.className = 'calendar-cell';
         cell.textContent = d;
         let dateKey = new Date(year, month, d).toISOString().split('T')[0];
-        if (learningData.checkinData[dateKey]) {
+        if (learningData.checkinData[dateKey] && learningData.checkinData[dateKey].checkedIn) {
             cell.classList.add('marked');
         }
         calendarGrid.appendChild(cell);
@@ -725,6 +764,22 @@ function renderAchievements() {
     progressBar.textContent = Math.floor(percentage) + '%';
 }
 
+// 新增函数，用于渲染词库使用频率
+function renderWordlistUsage() {
+    const container = document.getElementById('wordlist-usage-list');
+    container.innerHTML = '';
+    if (!learningData.wordlistUsage || Object.keys(learningData.wordlistUsage).length === 0) {
+        container.innerHTML = '<p>No wordlists studied yet.</p>';
+        return;
+    }
+
+    for (const [wl, count] of Object.entries(learningData.wordlistUsage)) {
+        let p = document.createElement('p');
+        p.textContent = `${wl}: studied ${count} time(s)`;
+        container.appendChild(p);
+    }
+}
+
 function answerQuestion(yes) {
     if (yes) {
         alert("Yay! Keep going! (✿◠‿◠)");
@@ -757,7 +812,7 @@ exportBtn.addEventListener('click', () => {
 // Initial render
 renderCalendar();
 renderAchievements();
+renderWordlistUsage();
 </script>
 </body>
 </html>
-
