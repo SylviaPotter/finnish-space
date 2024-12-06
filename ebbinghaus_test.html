@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Ebbinghaus Review and Testing</title>
 <style>
     body {
@@ -11,6 +11,7 @@
         margin: 0 auto;
         padding: 1rem;
         background: #f0f0f0;
+        position: relative;
     }
 
     header, footer {
@@ -43,7 +44,7 @@
         box-shadow: 0 0 3px rgba(0,0,0,0.05);
     }
 
-    .achievements, .calendar {
+    .achievements {
         text-align: center;
     }
 
@@ -61,12 +62,14 @@
         gap: 0.5rem;
         margin-top: 1rem;
     }
+
     .calendar-cell {
         padding: 0.5rem;
         background: #fff;
         border-radius: 3px;
         text-align: center;
     }
+
     .calendar-cell.marked {
         background: #c8e6c9; 
     }
@@ -77,6 +80,7 @@
         overflow: hidden;
         margin: 1rem 0;
     }
+
     .progress-bar {
         background: #4caf50;
         height: 20px;
@@ -94,11 +98,154 @@
         border-radius: 5px;
     }
 
-    #fileSelect {
+    .controls button {
+        margin: 0.5rem;
+    }
+
+    #fileSelect, #jsonFileSelect {
         margin-top:1rem;
     }
-</style>
 
+    /* Cute character CSS */
+    .cute-character {
+        margin: 2rem auto;
+        text-align: center;
+    }
+
+    .cute-bird {
+        position: relative;
+        width: 100px;
+        height: 100px;
+        margin: 0 auto 1rem;
+        background: #7CFC00; /* green body */
+        border-radius: 50%;
+        box-shadow: 0 0 0 3px #00000022;
+    }
+
+    .cute-bird::before, .cute-bird::after {
+        content: '';
+        position: absolute;
+        top: 35%;
+        width: 20px;
+        height: 20px;
+        background: #fff;
+        border-radius: 50%;
+        box-shadow: 0 0 0 2px #000;
+    }
+    .cute-bird::before {
+        left: 25%;
+    }
+    .cute-bird::after {
+        right: 25%;
+    }
+
+    .pink-hair {
+        position: absolute;
+        top: -15px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 60px;
+        height: 40px;
+        background: pink;
+        border-radius: 50% 50% 0 0;
+        box-shadow: 0 0 0 2px #00000022;
+    }
+
+    .horn-left, .horn-right {
+        position: absolute;
+        width: 0;
+        height: 0;
+        border-style: solid;
+        border-width: 15px;
+        border-color: transparent;
+    }
+    .horn-left {
+        top: -10px;
+        left: 10px;
+        border-bottom-color: #000;
+    }
+    .horn-right {
+        top: -10px;
+        right: 10px;
+        border-bottom-color: #000;
+    }
+
+    .cute-ask {
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+    }
+
+    .answer-btns button {
+        margin: 0 0.5rem;
+        padding: 0.5rem 1rem;
+        background: #4caf50;
+        color: #fff;
+        border: none;
+        border-radius: 3px;
+    }
+
+    .answer-btns button:hover {
+        background: #45a049;
+    }
+
+    .cute-bird-small {
+        position: relative;
+        width: 50px;
+        height: 50px;
+        background: #7CFC00;
+        border-radius: 50%;
+        margin: 0 auto;
+    }
+
+    .cute-bird-small::before, .cute-bird-small::after {
+        content: '';
+        position: absolute;
+        top: 35%;
+        width: 10px;
+        height: 10px;
+        background: #fff;
+        border-radius: 50%;
+        box-shadow: 0 0 0 1px #000;
+    }
+    .cute-bird-small::before {
+        left: 25%;
+    }
+    .cute-bird-small::after {
+        right: 25%;
+    }
+
+    .pink-hair-small {
+        position: absolute;
+        top: -7px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 30px;
+        height: 20px;
+        background: pink;
+        border-radius: 50% 50% 0 0;
+        box-shadow: 0 0 0 1px #00000022;
+    }
+
+    .horn-left-small, .horn-right-small {
+        position: absolute;
+        width: 0;
+        height: 0;
+        border-style: solid;
+        border-width: 7px;
+        border-color: transparent;
+    }
+    .horn-left-small {
+        top: -5px;
+        left: 5px;
+        border-bottom-color: #000;
+    }
+    .horn-right-small {
+        top: -5px;
+        right: 5px;
+        border-bottom-color: #000;
+    }
+</style>
+<!-- 引入SheetJS解析库 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
@@ -107,7 +254,38 @@
     <p>Select a wordlist -> Choose difficult words -> Test -> Check-in</p>
 </header>
 
+<div class="cute-character">
+    <div class="cute-bird">
+        <div class="pink-hair"></div>
+        <div class="horn-left"></div>
+        <div class="horn-right"></div>
+    </div>
+    <p class="cute-ask">Hi! Have you studied matching and spelling today? (｡･ω･｡)</p>
+    <div class="answer-btns">
+        <button onclick="answerQuestion(true)">Yes</button>
+        <button onclick="answerQuestion(false)">No</button>
+    </div>
+</div>
+
 <main>
+    <!-- JSON Import/Export section -->
+    <section class="section">
+        <h2>Data Sync (Import/Export from GitHub JSON)</h2>
+        <p>You can import progress data from a JSON file in your GitHub repository, or export current progress as JSON.</p>
+        <button onclick="fetchAllJsonFiles()">Load all .json files (Progress) from GitHub</button>
+        <br><br>
+        <select id="jsonFileSelect">
+            <option value="">Select a JSON file from GitHub...</option>
+        </select>
+        <br><br>
+        <button onclick="importFromSelectedJson()">Import Selected JSON Progress</button>
+        <p id="json-load-msg"></p>
+        <br>
+        <button id="export-btn">Export Progress</button>
+        <p id="import-export-msg"></p>
+    </section>
+
+    <!-- Select Wordlist -->
     <section class="section">
         <h2>Select Wordlist (.xlsx)</h2>
         <p>Load all .xlsx files from the GitHub repository and select one to study.</p>
@@ -119,16 +297,6 @@
         <br><br>
         <button onclick="startGame()">Load Selected Wordlist</button>
         <p id="load-wordlist-msg"></p>
-
-        
-        <div id="study-mark-section" style="display:none; margin-top:20px;">
-            <label>
-                <input type="checkbox" id="studyMarkCheckbox"> Mark this wordlist as studied today
-            </label>
-            <br><br>
-            <button onclick="confirmStudyMark()">Confirm Study</button>
-            <p id="study-mark-msg"></p>
-        </div>
     </section>
 
     <section class="section" id="select-words-section" style="display:none;">
@@ -166,7 +334,7 @@
 </main>
 
 <footer>
-    <p>Pure front-end solution. No server required.</p>
+    <p>Pure front-end solution. No server required. Import/Export data from GitHub to sync progress.</p>
 </footer>
 
 <script>
@@ -175,8 +343,7 @@ let defaultData = {
     masteredCount: 0,
     streakCount: 0,
     lastCheckinDay: null,
-    checkinData: {},
-    wordlistStudyHistory: {} 
+    checkinData: {}
 };
 
 function loadData() {
@@ -193,64 +360,105 @@ function saveData(data) {
 }
 
 let learningData = loadData();
-
-
 const intervals = [1,2,4,7,15,30]; 
-let wordlist = []; 
+
+let wordlist = []; // Will hold {fi: '', en: ''} objects
 let selectedWords = [];
 let allPassed = false;
 
 const repoBaseUrl = 'https://api.github.com/repos/SylviaPotter/finnish-space/contents/';
 const fileSelect = document.getElementById('fileSelect');
+const jsonFileSelect = document.getElementById('jsonFileSelect');
 
-async function fetchAllXlsxFiles() {
-    fileSelect.innerHTML = '<option value="">Loading files...</option>';
-    let allXlsxFiles = [];
-
+// Fetch JSON files
+async function fetchAllJsonFiles() {
+    jsonFileSelect.innerHTML = '<option value="">Loading...</option>';
+    let allJsonFiles = [];
     try {
-        allXlsxFiles = await fetchXlsxFilesRecursive('');
-        populateFileSelect(allXlsxFiles);
+        allJsonFiles = await fetchFilesRecursive('', '.json');
+        populateFileSelectGeneric(allJsonFiles, jsonFileSelect, "Select a JSON file from GitHub...");
+    } catch (error) {
+        console.error("Error fetching JSON files recursively:", error);
+        alert("Error fetching JSON files from the GitHub repository.");
+    }
+}
+
+// Fetch XLSX files
+async function fetchAllXlsxFiles() {
+    fileSelect.innerHTML = '<option value="">Loading...</option>';
+    let allXlsxFiles = [];
+    try {
+        allXlsxFiles = await fetchFilesRecursive('', '.xlsx');
+        populateFileSelectGeneric(allXlsxFiles, fileSelect, "Select a file from GitHub...");
     } catch (error) {
         console.error("Error fetching files recursively:", error);
-        alert("There was an error fetching files from the GitHub repository.");
+        alert("Error fetching files from the GitHub repository.");
     }
 }
 
-async function fetchXlsxFilesRecursive(path) {
+async function fetchFilesRecursive(path, extension) {
     const url = `${repoBaseUrl}${path}`;
-    try {
-        const response = await fetch(url);
-        if (!response.ok) {
-            throw new Error("Network response was not ok");
-        }
-        const items = await response.json();
-        let xlsxFiles = [];
-
-        for (const item of items) {
-            if (item.type === 'file' && item.name.endsWith('.xlsx')) {
-                xlsxFiles.push(item);
-            } else if (item.type === 'dir') {
-                const subDirFiles = await fetchXlsxFilesRecursive(item.path);
-                xlsxFiles = xlsxFiles.concat(subDirFiles);
-            }
-        }
-        return xlsxFiles;
-    } catch (error) {
-        console.error(`Error fetching content from ${url}:`, error);
-        return [];
+    const response = await fetch(url);
+    if (!response.ok) {
+        throw new Error("Network response was not ok");
     }
+    const items = await response.json();
+    let matchedFiles = [];
+
+    for (const item of items) {
+        if (item.type === 'file' && item.name.endsWith(extension)) {
+            matchedFiles.push(item);
+        } else if (item.type === 'dir') {
+            const subDirFiles = await fetchFilesRecursive(item.path, extension);
+            matchedFiles = matchedFiles.concat(subDirFiles);
+        }
+    }
+
+    return matchedFiles;
 }
 
-function populateFileSelect(files) {
-    fileSelect.innerHTML = '<option value="">Select a file from GitHub...</option>';
+function populateFileSelectGeneric(files, selectElement, defaultText) {
+    selectElement.innerHTML = `<option value="">${defaultText}</option>`;
     files.forEach(file => {
         const option = document.createElement('option');
         option.value = file.download_url;
         option.textContent = file.path; 
-        fileSelect.appendChild(option);
+        selectElement.appendChild(option);
     });
 }
 
+async function importFromSelectedJson() {
+    const jsonUrl = jsonFileSelect.value;
+    const msg = document.getElementById('json-load-msg');
+
+    if (!jsonUrl) {
+        msg.textContent = "Please select a JSON file first.";
+        return;
+    }
+
+    msg.textContent = "Loading JSON progress data...";
+    try {
+        const response = await fetch(jsonUrl);
+        if (!response.ok) {
+            throw new Error("Network response was not ok");
+        }
+        const importedData = await response.json();
+        if (importedData.wordProgress && importedData.masteredCount !== undefined) {
+            learningData = importedData;
+            saveData(learningData);
+            msg.textContent = "Import successful! Your progress is now updated.";
+            renderCalendar();
+            renderAchievements();
+        } else {
+            msg.textContent = "Import failed: JSON format incorrect.";
+        }
+    } catch(err) {
+        console.error("Error importing JSON:", err);
+        msg.textContent = "Import failed: unable to parse JSON.";
+    }
+}
+
+// Read XLSX file and populate wordlist
 async function startGame() {
     const fileUrl = fileSelect.value;
     const loadMsg = document.getElementById('load-wordlist-msg');
@@ -264,23 +472,25 @@ async function startGame() {
 
     try {
         const response = await fetch(fileUrl);
-        if (!response.ok) {
+        if(!response.ok) {
             throw new Error("Network response was not ok");
         }
-
         const arrayBuffer = await response.arrayBuffer();
+        // Parse XLSX
         const workbook = XLSX.read(new Uint8Array(arrayBuffer), {type: 'array'});
         const firstSheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[firstSheetName];
         const rows = XLSX.utils.sheet_to_json(worksheet, { header:1 });
 
+        // Map rows to wordlist
         wordlist = rows.map(row => {
             const [fi, en] = row;
-            if (fi && en) {
-                return { fi: fi.trim(), en: en.trim() };
+            if(fi && en) {
+                return {fi: fi.trim(), en: en.trim()};
             }
-        }).filter(pair => pair);
+        }).filter(Boolean);
 
+        // Initialize wordProgress if new words appear
         for (let w of wordlist) {
             if (!learningData.wordProgress[w.fi]) {
                 learningData.wordProgress[w.fi] = {
@@ -294,51 +504,17 @@ async function startGame() {
 
         loadMsg.textContent = "Wordlist loaded! Please select today's difficult words.";
         document.getElementById('select-words-section').style.display = 'block';
-
-        document.getElementById('study-mark-section').style.display = 'block';
-
-        renderWordSelection();
+        renderWordSelection(); // now we can render the words as checkboxes
     } catch (error) {
-        console.error("Error fetching or processing the file:", error);
-        loadMsg.textContent = "There was an error fetching or processing the file.";
+        console.error("Error loading/parsing wordlist:", error);
+        loadMsg.textContent = "Failed to load wordlist. Please try again.";
     }
-}
-
-function confirmStudyMark() {
-    const checkbox = document.getElementById('studyMarkCheckbox');
-    const msg = document.getElementById('study-mark-msg');
-
-    const fileUrl = fileSelect.value;
-    if (!fileUrl) {
-        msg.textContent = "No wordlist selected.";
-        return;
-    }
-
-    if (!checkbox.checked) {
-        msg.textContent = "You did not check the box, no record updated.";
-        return;
-    }
-
-    let today = new Date().toISOString().split('T')[0];
-    if (!learningData.wordlistStudyHistory[today]) {
-        learningData.wordlistStudyHistory[today] = {};
-    }
-
-    let selectedOption = fileSelect.querySelector(`option[value="${fileUrl}"]`);
-    let wordlistPath = selectedOption ? selectedOption.textContent : fileUrl;
-
-    if (!learningData.wordlistStudyHistory[today][wordlistPath]) {
-        learningData.wordlistStudyHistory[today][wordlistPath] = 0;
-    }
-    learningData.wordlistStudyHistory[today][wordlistPath]++;
-
-    saveData(learningData);
-    msg.textContent = `Recorded study of: ${wordlistPath} (Total: ${learningData.wordlistStudyHistory[today][wordlistPath]})`;
 }
 
 function renderWordSelection() {
     const container = document.getElementById('word-list-container');
     container.innerHTML = '';
+    // Display each word as a checkbox for user to select
     wordlist.forEach(w => {
         let div = document.createElement('div');
         div.className = 'word-item';
@@ -382,6 +558,8 @@ function renderTestItems() {
     const testContainer = document.getElementById('test-container');
     testContainer.innerHTML = '';
 
+    // selectedWords: user chosen difficult words
+    // We'll show their Finnish words and ask for their English meaning
     selectedWords.forEach(w => {
         let div = document.createElement('div');
         div.className = 'test-item';
@@ -515,6 +693,16 @@ function renderAchievements() {
         </div>
     `;
 
+    let charDiv = document.createElement('div');
+    charDiv.innerHTML = `
+        <div class="cute-bird-small">
+            <div class="pink-hair-small"></div>
+            <div class="horn-left-small"></div>
+            <div class="horn-right-small"></div>
+        </div>
+    `;
+    achievementsDiv.appendChild(charDiv);
+
     if (learningData.masteredCount >= 50) {
         achievementsDiv.innerHTML += `
         <div class="achievement-item">
@@ -537,16 +725,39 @@ function renderAchievements() {
     progressBar.textContent = Math.floor(percentage) + '%';
 }
 
-
 function answerQuestion(yes) {
     if (yes) {
-        alert("Yay! Keep going!");
+        alert("Yay! Keep going! (✿◠‿◠)");
     } else {
-        alert("Grrr! 'Finnish today or FINISH tomorrow!' No excuses!");
+        alert("Grrr! 'Finnish today or FINISH tomorrow!' No excuses! (ꐦ°᷄д°᷅)");
     }
 }
 
+// Export progress with date-based filename
+const exportBtn = document.getElementById('export-btn');
+exportBtn.addEventListener('click', () => {
+    let dataStr = JSON.stringify(learningData, null, 2);
+    let blob = new Blob([dataStr], {type: "application/json"});
+    let url = URL.createObjectURL(blob);
 
+    let now = new Date();
+    let year = now.getFullYear();
+    let month = String(now.getMonth() + 1).padStart(2, '0');
+    let day = String(now.getDate()).padStart(2, '0');
+    let filename = `my_progress_${year}${month}${day}.json`;
+
+    let a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+
+    URL.revokeObjectURL(url);
+});
+
+// Initial render
+renderCalendar();
+renderAchievements();
 </script>
 </body>
 </html>
+
