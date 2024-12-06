@@ -586,12 +586,13 @@ function renderTestItems() {
     const testContainer = document.getElementById('test-container');
     testContainer.innerHTML = '';
 
+    // 这里将原先的 h3 改为显示英文单词 w.en，让用户填写芬兰语
     selectedWords.forEach(w => {
         let div = document.createElement('div');
         div.className = 'test-item';
         div.innerHTML=`
-            <h3>${w.fi}</h3>
-            <input type="text" class="spell-input" data-fi="${w.fi}" placeholder="Type the English meaning">
+            <h3>${w.en}</h3>
+            <input type="text" class="spell-input" data-fi="${w.fi}" placeholder="Type the Finnish word">
         `;
         testContainer.appendChild(div);
     });
@@ -608,12 +609,12 @@ function checkAnswers() {
     inputs.forEach(input => {
         let fi = input.getAttribute('data-fi');
         let userAnswer = input.value.trim().toLowerCase();
-        let correctEn = learningData.wordProgress[fi].en.toLowerCase();
+        const correctFi = fi.toLowerCase();
 
-        if (userAnswer === correctEn) {
-            updateEbbinghausSchedule({fi:fi}, true);
+        if (userAnswer === correctFi) {
+            updateEbbinghausSchedule({fi: fi}, true);
         } else {
-            updateEbbinghausSchedule({fi:fi}, false);
+            updateEbbinghausSchedule({fi: fi}, false);
             allCorrect = false;
         }
     });
