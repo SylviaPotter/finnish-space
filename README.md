@@ -32,7 +32,7 @@ The **Spelling Quiz** helps you practice writing Finnish words correctly based o
 
 #### **How to Use the Spelling Quiz**
 1. Click on the "Choose File" button to upload an loacal .xlsx file containing the Finnish and English words. You can also click <span style='color:red;'>**Load Files from GitHub Repository**</span>, then select a file from GitHub.
-   - Ensure the local .xlsx file has **Finnish words in the first column** and **English translations in the second column**.
+   - Ensure the local .xlsx file has Finnish words in the first column and English translations in the second column.
 
 2. Click the <span style='color:red;'>**Start the Quiz**</span> button to begin.
    - For each page, you'll be given English translations and asked to type the corresponding Finnish word.
