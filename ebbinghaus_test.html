@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<title>Ebbinghaus Review and Testing</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 1rem;
+        background: #f0f0f0;
+        position: relative;
+    }
+
+    header, footer {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    h1, h2, h3, h4 {
+        text-align: center;
+    }
+
+    .section {
+        background: #fff;
+        padding: 1rem;
+        margin-bottom: 2rem;
+        border-radius: 5px;
+        box-shadow: 0 0 3px rgba(0,0,0,0.1);
+    }
+
+    .word-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .word-item {
+        background: #fdfdfd;
+        padding: 0.5rem 1rem;
+        border-radius: 5px;
+        box-shadow: 0 0 3px rgba(0,0,0,0.05);
+    }
+
+    .achievements {
+        text-align: center;
+    }
+
+    .achievement-item {
+        display: inline-block;
+        margin: 1rem;
+        padding: 1rem;
+        background: #eee;
+        border-radius: 5px;
+    }
+
+    .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+
+    .calendar-cell {
+        padding: 0.5rem;
+        background: #fff;
+        border-radius: 3px;
+        text-align: center;
+    }
+
+    .calendar-cell.marked {
+        background: #c8e6c9; 
+    }
+
+    .progress-bar-container {
+        background: #ddd;
+        border-radius: 5px;
+        overflow: hidden;
+        margin: 1rem 0;
+    }
+
+    .progress-bar {
+        background: #4caf50;
+        height: 20px;
+        width: 0%;
+        color: #fff;
+        text-align: center;
+        font-size: 0.8rem;
+        line-height: 20px;
+    }
+
+    .test-item {
+        background: #fdfdfd;
+        margin-bottom: 1rem;
+        padding: 1rem;
+        border-radius: 5px;
+    }
+
+    .controls button {
+        margin: 0.5rem;
+    }
+
+    #fileSelect, #jsonFileSelect {
+        margin-top:1rem;
+    }
+
+    /* Cute character CSS */
+    .cute-character {
+        margin: 2rem auto;
+        text-align: center;
+    }
+
+    .cute-bird {
+        position: relative;
+        width: 100px;
+        height: 100px;
+        margin: 0 auto 1rem;
+        background: #7CFC00; /* green body */
+        border-radius: 50%;
+        box-shadow: 0 0 0 3px #00000022;
+    }
+
+    .cute-bird::before, .cute-bird::after {
+        content: '';
+        position: absolute;
+        top: 35%;
+        width: 20px;
+        height: 20px;
+        background: #fff;
+        border-radius: 50%;
+        box-shadow: 0 0 0 2px #000;
+    }
+    .cute-bird::before {
+        left: 25%;
+    }
+    .cute-bird::after {
+        right: 25%;
+    }
+
+    .pink-hair {
+        position: absolute;
+        top: -15px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 60px;
+        height: 40px;
+        background: pink;
+        border-radius: 50% 50% 0 0;
+        box-shadow: 0 0 0 2px #00000022;
+    }
+
+    .horn-left, .horn-right {
+        position: absolute;
+        width: 0;
+        height: 0;
+        border-style: solid;
+        border-width: 15px;
+        border-color: transparent;
+    }
+    .horn-left {
+        top: -10px;
+        left: 10px;
+        border-bottom-color: #000;
+    }
+    .horn-right {
+        top: -10px;
+        right: 10px;
+        border-bottom-color: #000;
+    }
+
+    .cute-ask {
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+    }
+
+    .answer-btns button {
+        margin: 0 0.5rem;
+        padding: 0.5rem 1rem;
+        background: #4caf50;
+        color: #fff;
+        border: none;
+        border-radius: 3px;
+    }
+
+    .answer-btns button:hover {
+        background: #45a049;
+    }
+
+    .cute-bird-small {
+        position: relative;
+        width: 50px;
+        height: 50px;
+        background: #7CFC00;
+        border-radius: 50%;
+        margin: 0 auto;
+    }
+
+    .cute-bird-small::before, .cute-bird-small::after {
+        content: '';
+        position: absolute;
+        top: 35%;
+        width: 10px;
+        height: 10px;
+        background: #fff;
+        border-radius: 50%;
+        box-shadow: 0 0 0 1px #000;
+    }
+    .cute-bird-small::before {
+        left: 25%;
+    }
+    .cute-bird-small::after {
+        right: 25%;
+    }
+
+    .pink-hair-small {
+        position: absolute;
+        top: -7px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 30px;
+        height: 20px;
+        background: pink;
+        border-radius: 50% 50% 0 0;
+        box-shadow: 0 0 0 1px #00000022;
+    }
+
+    .horn-left-small, .horn-right-small {
+        position: absolute;
+        width: 0;
+        height: 0;
+        border-style: solid;
+        border-width: 7px;
+        border-color: transparent;
+    }
+    .horn-left-small {
+        top: -5px;
+        left: 5px;
+        border-bottom-color: #000;
+    }
+    .horn-right-small {
+        top: -5px;
+        right: 5px;
+        border-bottom-color: #000;
+    }
+
+    .wordlist-usage-container {
+        text-align: center;
+    }
+
+    .wordlist-usage-container h4 {
+        margin-top: 1rem;
+    }
+
+    .wordlist-usage-list {
+        display: inline-block;
+        text-align: left;
+        background: #eee;
+        padding: 1rem;
+        border-radius: 5px;
+    }
+    .wordlist-usage-list p {
+        margin: 0.5rem 0;
+    }
+</style>
+<!-- 引入SheetJS解析库 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+<header>
+    <h1>Ebbinghaus Review and Testing</h1>
+    <p>Select a wordlist -> Choose difficult words -> Test -> Check-in</p>
+</header>
+
+<div class="cute-character">
+    <div class="cute-bird">
+        <div class="pink-hair"></div>
+        <div class="horn-left"></div>
+        <div class="horn-right"></div>
+    </div>
+    <p class="cute-ask">Hi! Have you studied matching and spelling today? (｡･ω･｡)</p>
+    <div class="answer-btns">
+        <button onclick="answerQuestion(true)">Yes</button>
+        <button onclick="answerQuestion(false)">No</button>
+    </div>
+</div>
+
+<main>
+    <!-- JSON Import/Export section -->
+    <section class="section">
+        <h2>Data Sync (Import/Export from GitHub JSON)</h2>
+        <p>You can import progress data from a JSON file in your GitHub repository, or export current progress as JSON.</p>
+        <button onclick="fetchAllJsonFiles()">Load all .json files (Progress) from GitHub</button>
+        <br><br>
+        <select id="jsonFileSelect">
+            <option value="">Select a JSON file from GitHub...</option>
+        </select>
+        <br><br>
+        <button onclick="importFromSelectedJson()">Import Selected JSON Progress</button>
+        <p id="json-load-msg"></p>
+        <br>
+        <button id="export-btn">Export Progress</button>
+        <p id="import-export-msg"></p>
+    </section>
+
+    <!-- Select Wordlist -->
+    <section class="section">
+        <h2>Select Wordlist (.xlsx)</h2>
+        <p>Load all .xlsx files from the GitHub repository and select one to study.</p>
+        <button onclick="fetchAllXlsxFiles()">Load all .xlsx files</button>
+        <br><br>
+        <select id="fileSelect">
+            <option value="">Select a file from GitHub...</option>
+        </select>
+        <br><br>
+        <button onclick="startGame()">Load Selected Wordlist</button>
+        <p id="load-wordlist-msg"></p>
+    </section>
+
+    <section class="section" id="select-words-section" style="display:none;">
+        <h2>Choose Today's Difficult Words</h2>
+        <p>Check the words you find difficult or frequently miss.</p>
+        <div id="word-list-container" class="word-list"></div>
+        <button id="start-test-btn" style="display:none;">Start Review Test</button>
+        <p id="select-words-msg"></p>
+    </section>
+
+    <section class="section" id="test-section" style="display:none;">
+        <h2>Today's Review Test</h2>
+        <p>Type the English meaning of each selected Finnish word. All must be correct to check-in.</p>
+        <div id="test-container"></div>
+        <p id="test-msg"></p>
+    </section>
+
+    <section class="section" id="daily-checkin">
+        <h2>Daily Check-in</h2>
+        <p>Only after passing all selected words can you check-in.</p>
+        <button id="checkin-btn" disabled>Check-in Today</button>
+        <div id="checkin-message"></div>
+        <h3>Monthly Calendar</h3>
+        <div class="calendar-grid" id="calendar-grid"></div>
+    </section>
+
+    <section class="section">
+        <h2>Achievements and Progress</h2>
+        <div class="achievements" id="achievements"></div>
+        <h4>Your progress:</h4>
+        <div class="progress-bar-container">
+            <div class="progress-bar" id="progress-bar">0%</div>
+        </div>
+
+        <div class="wordlist-usage-container" id="wordlist-usage-container">
+            <h4>Wordlist Study Frequency</h4>
+            <div class="wordlist-usage-list" id="wordlist-usage-list"></div>
+        </div>
+    </section>
+</main>
+
+<footer>
+    <p>Pure front-end solution. No server required. Import/Export data from GitHub to sync progress.</p>
+</footer>
+
+<script>
+let defaultData = {
+    wordProgress: {},
+    masteredCount: 0,
+    streakCount: 0,
+    lastCheckinDay: null,
+    checkinData: {},
+    wordlistUsage: {} // 新增，用来记录每个词库的学习次数
+};
+
+function loadData() {
+    let data = localStorage.getItem('learningData');
+    if (!data) {
+        localStorage.setItem('learningData', JSON.stringify(defaultData));
+        return defaultData;
+    }
+    return JSON.parse(data);
+}
+
+function saveData(data) {
+    localStorage.setItem('learningData', JSON.stringify(data));
+}
+
+let learningData = loadData();
+const intervals = [1,2,4,7,15,30]; 
+
+let wordlist = []; // Will hold {fi: '', en: ''} objects
+let selectedWords = [];
+let allPassed = false;
+let currentWordlistFile = null; // 用来记录当前加载的词库文件名或路径
+
+const repoBaseUrl = 'https://api.github.com/repos/SylviaPotter/finnish-space/contents/';
+const fileSelect = document.getElementById('fileSelect');
+const jsonFileSelect = document.getElementById('jsonFileSelect');
+
+// Fetch JSON files
+async function fetchAllJsonFiles() {
+    jsonFileSelect.innerHTML = '<option value="">Loading...</option>';
+    let allJsonFiles = [];
+    try {
+        allJsonFiles = await fetchFilesRecursive('', '.json');
+        populateFileSelectGeneric(allJsonFiles, jsonFileSelect, "Select a JSON file from GitHub...");
+    } catch (error) {
+        console.error("Error fetching JSON files recursively:", error);
+        alert("Error fetching JSON files from the GitHub repository.");
+    }
+}
+
+// Fetch XLSX files
+async function fetchAllXlsxFiles() {
+    fileSelect.innerHTML = '<option value="">Loading...</option>';
+    let allXlsxFiles = [];
+    try {
+        allXlsxFiles = await fetchFilesRecursive('', '.xlsx');
+        populateFileSelectGeneric(allXlsxFiles, fileSelect, "Select a file from GitHub...");
+    } catch (error) {
+        console.error("Error fetching files recursively:", error);
+        alert("Error fetching files from the GitHub repository.");
+    }
+}
+
+async function fetchFilesRecursive(path, extension) {
+    const url = `${repoBaseUrl}${path}`;
+    const response = await fetch(url);
+    if (!response.ok) {
+        throw new Error("Network response was not ok");
+    }
+    const items = await response.json();
+    let matchedFiles = [];
+
+    for (const item of items) {
+        if (item.type === 'file' && item.name.endsWith(extension)) {
+            matchedFiles.push(item);
+        } else if (item.type === 'dir') {
+            const subDirFiles = await fetchFilesRecursive(item.path, extension);
+            matchedFiles = matchedFiles.concat(subDirFiles);
+        }
+    }
+
+    return matchedFiles;
+}
+
+function populateFileSelectGeneric(files, selectElement, defaultText) {
+    selectElement.innerHTML = `<option value="">${defaultText}</option>`;
+    files.forEach(file => {
+        const option = document.createElement('option');
+        option.value = file.download_url;
+        option.textContent = file.path; 
+        selectElement.appendChild(option);
+    });
+}
+
+async function importFromSelectedJson() {
+    const jsonUrl = jsonFileSelect.value;
+    const msg = document.getElementById('json-load-msg');
+
+    if (!jsonUrl) {
+        msg.textContent = "Please select a JSON file first.";
+        return;
+    }
+
+    msg.textContent = "Loading JSON progress data...";
+    try {
+        const response = await fetch(jsonUrl);
+        if (!response.ok) {
+            throw new Error("Network response was not ok");
+        }
+        const importedData = await response.json();
+        if (importedData.wordProgress && importedData.masteredCount !== undefined) {
+            learningData = importedData;
+            saveData(learningData);
+            msg.textContent = "Import successful! Your progress is now updated.";
+            renderCalendar();
+            renderAchievements();
+            renderWordlistUsage();
+        } else {
+            msg.textContent = "Import failed: JSON format incorrect.";
+        }
+    } catch(err) {
+        console.error("Error importing JSON:", err);
+        msg.textContent = "Import failed: unable to parse JSON.";
+    }
+}
+
+// Read XLSX file and populate wordlist
+async function startGame() {
+    const fileUrl = fileSelect.value;
+    const loadMsg = document.getElementById('load-wordlist-msg');
+
+    if (!fileUrl) {
+        loadMsg.textContent = "Please select a file first.";
+        return;
+    }
+
+    loadMsg.textContent = "Loading wordlist...";
+    currentWordlistFile = fileSelect.options[fileSelect.selectedIndex].textContent;
+
+    try {
+        const response = await fetch(fileUrl);
+        if(!response.ok) {
+            throw new Error("Network response was not ok");
+        }
+        const arrayBuffer = await response.arrayBuffer();
+        // Parse XLSX
+        const workbook = XLSX.read(new Uint8Array(arrayBuffer), {type: 'array'});
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        const rows = XLSX.utils.sheet_to_json(worksheet, { header:1 });
+
+        // Map rows to wordlist
+        wordlist = rows.map(row => {
+            const [fi, en] = row;
+            if(fi && en) {
+                return {fi: fi.trim(), en: en.trim()};
+            }
+        }).filter(Boolean);
+
+        // Initialize wordProgress if new words appear
+        for (let w of wordlist) {
+            if (!learningData.wordProgress[w.fi]) {
+                learningData.wordProgress[w.fi] = {
+                    en: w.en,
+                    stage: 0,
+                    nextReview: Date.now()
+                };
+            }
+        }
+        saveData(learningData);
+
+        loadMsg.textContent = "Wordlist loaded! Please select today's difficult words.";
+        document.getElementById('select-words-section').style.display = 'block';
+        renderWordSelection(); // now we can render the words as checkboxes
+    } catch (error) {
+        console.error("Error loading/parsing wordlist:", error);
+        loadMsg.textContent = "Failed to load wordlist. Please try again.";
+    }
+}
+
+function renderWordSelection() {
+    const container = document.getElementById('word-list-container');
+    container.innerHTML = '';
+    // Display each word as a checkbox for user to select
+    wordlist.forEach(w => {
+        let div = document.createElement('div');
+        div.className = 'word-item';
+        div.innerHTML = `
+          <label>
+            <input type="checkbox" value="${w.fi}">
+            ${w.fi} (${w.en})
+          </label>
+        `;
+        container.appendChild(div);
+    });
+
+    const startTestBtn = document.getElementById('start-test-btn');
+    startTestBtn.style.display = 'block';
+    startTestBtn.onclick = startRevisionTest;
+}
+
+function startRevisionTest() {
+    const checks = document.querySelectorAll('#word-list-container input[type=checkbox]:checked');
+    if (checks.length === 0) {
+        document.getElementById('select-words-msg').textContent = "Please select at least one word before starting the test!";
+        return;
+    }
+    selectedWords = [];
+    checks.forEach(chk => {
+        let fi = chk.value;
+        let w = wordlist.find(x => x.fi === fi);
+        if (w) selectedWords.push(w);
+    });
+
+    if (selectedWords.length > 0) {
+        document.getElementById('select-words-section').style.display = 'none';
+        renderTestItems();
+    }
+}
+
+function renderTestItems() {
+    const testSection = document.getElementById('test-section');
+    testSection.style.display = 'block';
+
+    const testContainer = document.getElementById('test-container');
+    testContainer.innerHTML = '';
+
+    // 这里将原先的 h3 改为显示英文单词 w.en，让用户填写芬兰语
+    selectedWords.forEach(w => {
+        let div = document.createElement('div');
+        div.className = 'test-item';
+        div.innerHTML=`
+            <h3>${w.en}</h3>
+            <input type="text" class="spell-input" data-fi="${w.fi}" placeholder="Type the Finnish word">
+        `;
+        testContainer.appendChild(div);
+    });
+
+    let submitBtn = document.createElement('button');
+    submitBtn.textContent = "Submit Answers";
+    submitBtn.onclick = checkAnswers;
+    testContainer.appendChild(submitBtn);
+}
+
+function checkAnswers() {
+    const inputs = document.querySelectorAll('.spell-input');
+    let allCorrect = true;
+    inputs.forEach(input => {
+        let fi = input.getAttribute('data-fi');
+        let userAnswer = input.value.trim().toLowerCase();
+        const correctFi = fi.toLowerCase();
+
+        if (userAnswer === correctFi) {
+            updateEbbinghausSchedule({fi: fi}, true);
+        } else {
+            updateEbbinghausSchedule({fi: fi}, false);
+            allCorrect = false;
+        }
+    });
+
+    const testMsg = document.getElementById('test-msg');
+    if (allCorrect) {
+        testMsg.textContent = "Congratulations! All correct. You can now check-in.";
+        allPassed = true;
+        document.getElementById('checkin-btn').disabled = false;
+    } else {
+        testMsg.textContent = "Some answers are incorrect. Please correct them and submit again!";
+    }
+}
+
+function updateEbbinghausSchedule(word, remembered) {
+    let wp = learningData.wordProgress[word.fi];
+    if (!wp) return;
+    if (remembered) {
+        let nextInterval = intervals[Math.min(wp.stage, intervals.length-1)];
+        wp.stage++;
+        wp.nextReview = Date.now() + nextInterval*24*60*60*1000;
+        learningData.masteredCount++; 
+    } else {
+        wp.stage = 0;
+        wp.nextReview = Date.now() + 24*60*60*1000; 
+    }
+    saveData(learningData);
+    renderAchievements();
+}
+
+const checkinBtn = document.getElementById('checkin-btn');
+const checkinMessage = document.getElementById('checkin-message');
+checkinBtn.addEventListener('click', () => {
+    if (!allPassed) {
+        checkinMessage.textContent = "Please finish all correct answers first!";
+        return;
+    }
+
+    let today = new Date();
+    let todayKey = today.toISOString().split('T')[0];
+
+    // 改为存储对象，而不是简单的true
+    if (!learningData.checkinData[todayKey]) {
+        learningData.checkinData[todayKey] = {checkedIn:true, wordlists:[]};
+        if (learningData.lastCheckinDay) {
+            let lastDate = new Date(learningData.lastCheckinDay);
+            let diff = (today - lastDate)/(1000*60*60*24);
+            if (diff === 1) {
+                learningData.streakCount++;
+            } else if (diff > 1) {
+                learningData.streakCount = 1;
+            }
+        } else {
+            learningData.streakCount = 1;
+        }
+        learningData.lastCheckinDay = todayKey;
+    }
+
+    // 记录当前使用的词库到当天的data和wordlistUsage
+    if (currentWordlistFile) {
+        if (!learningData.checkinData[todayKey].wordlists.includes(currentWordlistFile)) {
+            learningData.checkinData[todayKey].wordlists.push(currentWordlistFile);
+        }
+
+        if (!learningData.wordlistUsage[currentWordlistFile]) {
+            learningData.wordlistUsage[currentWordlistFile] = 0;
+        }
+        learningData.wordlistUsage[currentWordlistFile]++;
+    }
+
+    saveData(learningData);
+    checkinMessage.textContent = `Check-in successful! Streak: ${learningData.streakCount}`;
+    renderCalendar();
+    renderAchievements();
+    renderWordlistUsage();
+});
+
+function renderCalendar() {
+    const calendarGrid = document.getElementById('calendar-grid');
+    calendarGrid.innerHTML = '';
+    let now = new Date();
+    let year = now.getFullYear();
+    let month = now.getMonth();
+    let firstDay = new Date(year, month, 1);
+    let lastDay = new Date(year, month+1, 0);
+    let startDay = firstDay.getDay();
+
+    for (let i=0;i<startDay;i++) {
+        let cell = document.createElement('div');
+        cell.className = 'calendar-cell';
+        calendarGrid.appendChild(cell);
+    }
+
+    for (let d=1; d<= lastDay.getDate(); d++) {
+        let cell = document.createElement('div');
+        cell.className = 'calendar-cell';
+        cell.textContent = d;
+        let dateKey = new Date(year, month, d).toISOString().split('T')[0];
+        if (learningData.checkinData[dateKey] && learningData.checkinData[dateKey].checkedIn) {
+            cell.classList.add('marked');
+        }
+        calendarGrid.appendChild(cell);
+    }
+}
+
+function renderAchievements() {
+    let achievementsDiv = document.getElementById('achievements');
+    achievementsDiv.innerHTML = `
+        <div class="achievement-item">
+            <h4>Words Mastered</h4>
+            <p>${learningData.masteredCount}</p>
+        </div>
+        <div class="achievement-item">
+            <h4>Streak (Days)</h4>
+            <p>${learningData.streakCount}</p>
+        </div>
+    `;
+
+    let charDiv = document.createElement('div');
+    charDiv.innerHTML = `
+        <div class="cute-bird-small">
+            <div class="pink-hair-small"></div>
+            <div class="horn-left-small"></div>
+            <div class="horn-right-small"></div>
+        </div>
+    `;
+    achievementsDiv.appendChild(charDiv);
+
+    if (learningData.masteredCount >= 50) {
+        achievementsDiv.innerHTML += `
+        <div class="achievement-item">
+            <h4>Achievement Unlocked</h4>
+            <p>50+ words mastered: Vocabulary Master I!</p>
+        </div>`;
+    }
+
+    if (learningData.streakCount >= 7) {
+        achievementsDiv.innerHTML += `
+        <div class="achievement-item">
+            <h4>Achievement Unlocked</h4>
+            <p>7-day streak: One-Week Wonder!</p>
+        </div>`;
+    }
+
+    let progressBar = document.getElementById('progress-bar');
+    let percentage = (learningData.masteredCount % 100)/100 * 100;
+    progressBar.style.width = percentage + '%';
+    progressBar.textContent = Math.floor(percentage) + '%';
+}
+
+// 新增函数，用于渲染词库使用频率
+function renderWordlistUsage() {
+    const container = document.getElementById('wordlist-usage-list');
+    container.innerHTML = '';
+    if (!learningData.wordlistUsage || Object.keys(learningData.wordlistUsage).length === 0) {
+        container.innerHTML = '<p>No wordlists studied yet.</p>';
+        return;
+    }
+
+    for (const [wl, count] of Object.entries(learningData.wordlistUsage)) {
+        let p = document.createElement('p');
+        p.textContent = `${wl}: studied ${count} time(s)`;
+        container.appendChild(p);
+    }
+}
+
+function answerQuestion(yes) {
+    if (yes) {
+        alert("Yay! Keep going! (✿◠‿◠)");
+    } else {
+        alert("Grrr! 'Finnish today or FINISH tomorrow!' No excuses! (ꐦ°᷄д°᷅)");
+    }
+}
+
+// Export progress with date-based filename
+const exportBtn = document.getElementById('export-btn');
+exportBtn.addEventListener('click', () => {
+    let dataStr = JSON.stringify(learningData, null, 2);
+    let blob = new Blob([dataStr], {type: "application/json"});
+    let url = URL.createObjectURL(blob);
+
+    let now = new Date();
+    let year = now.getFullYear();
+    let month = String(now.getMonth() + 1).padStart(2, '0');
+    let day = String(now.getDate()).padStart(2, '0');
+    let filename = `my_progress_${year}${month}${day}.json`;
+
+    let a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+
+    URL.revokeObjectURL(url);
+});
+
+// Initial render
+renderCalendar();
+renderAchievements();
+renderWordlistUsage();
+</script>
+</body>
+</html>
