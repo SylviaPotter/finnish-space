@@ -106,7 +106,6 @@
         margin-top:1rem;
     }
 
-    /* Cute character CSS */
     .cute-character {
         margin: 2rem auto;
         text-align: center;
@@ -245,7 +244,6 @@
         border-bottom-color: #000;
     }
 </style>
-<!-- 引入SheetJS解析库 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
@@ -297,6 +295,16 @@
         <br><br>
         <button onclick="startGame()">Load Selected Wordlist</button>
         <p id="load-wordlist-msg"></p>
+
+        <!-- New section: Mark today's study of this wordlist -->
+        <div id="study-mark-section" style="display:none; margin-top:20px;">
+            <label>
+                <input type="checkbox" id="studyMarkCheckbox"> Mark this wordlist as studied today
+            </label>
+            <br><br>
+            <button onclick="confirmStudyMark()">Confirm Study</button>
+            <p id="study-mark-msg"></p>
+        </div>
     </section>
 
     <section class="section" id="select-words-section" style="display:none;">
@@ -330,6 +338,8 @@
         <div class="progress-bar-container">
             <div class="progress-bar" id="progress-bar">0%</div>
         </div>
+        <h4>Your Wordlist Study History (Today)</h4>
+        <div id="wordlist-history"></div>
     </section>
 </main>
 
@@ -343,7 +353,8 @@ let defaultData = {
     masteredCount: 0,
     streakCount: 0,
     lastCheckinDay: null,
-    checkinData: {}
+    checkinData: {},
+    wordlistStudyHistory: {} // structure: { "YYYY-MM-DD": { "path/to/wordlist.xlsx": count } }
 };
 
 function loadData() {
@@ -362,7 +373,7 @@ function saveData(data) {
 let learningData = loadData();
 const intervals = [1,2,4,7,15,30]; 
 
-let wordlist = []; // Will hold {fi: '', en: ''} objects
+let wordlist = []; 
 let selectedWords = [];
 let allPassed = false;
 
@@ -370,7 +381,6 @@ const repoBaseUrl = 'https://api.github.com/repos/SylviaPotter/finnish-space/con
 const fileSelect = document.getElementById('fileSelect');
 const jsonFileSelect = document.getElementById('jsonFileSelect');
 
-// Fetch JSON files
 async function fetchAllJsonFiles() {
     jsonFileSelect.innerHTML = '<option value="">Loading...</option>';
     let allJsonFiles = [];
@@ -383,7 +393,6 @@ async function fetchAllJsonFiles() {
     }
 }
 
-// Fetch XLSX files
 async function fetchAllXlsxFiles() {
     fileSelect.innerHTML = '<option value="">Loading...</option>';
     let allXlsxFiles = [];
@@ -449,6 +458,7 @@ async function importFromSelectedJson() {
             msg.textContent = "Import successful! Your progress is now updated.";
             renderCalendar();
             renderAchievements();
+            renderWordlistHistory();
         } else {
             msg.textContent = "Import failed: JSON format incorrect.";
         }
@@ -458,7 +468,6 @@ async function importFromSelectedJson() {
     }
 }
 
-// Read XLSX file and populate wordlist
 async function startGame() {
     const fileUrl = fileSelect.value;
     const loadMsg = document.getElementById('load-wordlist-msg');
@@ -476,13 +485,11 @@ async function startGame() {
             throw new Error("Network response was not ok");
         }
         const arrayBuffer = await response.arrayBuffer();
-        // Parse XLSX
         const workbook = XLSX.read(new Uint8Array(arrayBuffer), {type: 'array'});
         const firstSheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[firstSheetName];
         const rows = XLSX.utils.sheet_to_json(worksheet, { header:1 });
 
-        // Map rows to wordlist
         wordlist = rows.map(row => {
             const [fi, en] = row;
             if(fi && en) {
@@ -490,7 +497,6 @@ async function startGame() {
             }
         }).filter(Boolean);
 
-        // Initialize wordProgress if new words appear
         for (let w of wordlist) {
             if (!learningData.wordProgress[w.fi]) {
                 learningData.wordProgress[w.fi] = {
@@ -503,18 +509,56 @@ async function startGame() {
         saveData(learningData);
 
         loadMsg.textContent = "Wordlist loaded! Please select today's difficult words.";
-        document.getElementById('select-words-section').style.display = 'block';
-        renderWordSelection(); // now we can render the words as checkboxes
+        // 显示记录词库学习的区域
+        document.getElementById('study-mark-section').style.display = 'block';
     } catch (error) {
         console.error("Error loading/parsing wordlist:", error);
         loadMsg.textContent = "Failed to load wordlist. Please try again.";
     }
 }
 
+// 确认已学习该词库
+function confirmStudyMark() {
+    const checkbox = document.getElementById('studyMarkCheckbox');
+    const msg = document.getElementById('study-mark-msg');
+
+    const fileUrl = fileSelect.value;
+    if (!fileUrl) {
+        msg.textContent = "No wordlist selected.";
+        return;
+    }
+
+    if (!checkbox.checked) {
+        msg.textContent = "You did not check the box, no record updated.";
+        return;
+    }
+
+    let today = new Date().toISOString().split('T')[0];
+    if (!learningData.wordlistStudyHistory[today]) {
+        learningData.wordlistStudyHistory[today] = {};
+    }
+
+    // Extract a recognizable identifier for the wordlist (e.g., the file path)
+    let selectedOption = fileSelect.querySelector(`option[value="${fileUrl}"]`);
+    let wordlistPath = selectedOption ? selectedOption.textContent : fileUrl;
+
+    if (!learningData.wordlistStudyHistory[today][wordlistPath]) {
+        learningData.wordlistStudyHistory[today][wordlistPath] = 0;
+    }
+    learningData.wordlistStudyHistory[today][wordlistPath]++;
+
+    saveData(learningData);
+    msg.textContent = `Recorded study of: ${wordlistPath} (Total: ${learningData.wordlistStudyHistory[today][wordlistPath]})`;
+
+    // Now show the select-words section
+    document.getElementById('select-words-section').style.display = 'block';
+    renderWordSelection();
+    renderWordlistHistory();
+}
+
 function renderWordSelection() {
     const container = document.getElementById('word-list-container');
     container.innerHTML = '';
-    // Display each word as a checkbox for user to select
     wordlist.forEach(w => {
         let div = document.createElement('div');
         div.className = 'word-item';
@@ -558,8 +602,6 @@ function renderTestItems() {
     const testContainer = document.getElementById('test-container');
     testContainer.innerHTML = '';
 
-    // selectedWords: user chosen difficult words
-    // We'll show their Finnish words and ask for their English meaning
     selectedWords.forEach(w => {
         let div = document.createElement('div');
         div.className = 'test-item';
@@ -647,6 +689,7 @@ checkinBtn.addEventListener('click', () => {
         checkinMessage.textContent = `Check-in successful! Streak: ${learningData.streakCount}`;
         renderCalendar();
         renderAchievements();
+        renderWordlistHistory();
     } else {
         checkinMessage.textContent = `Already checked in today! Streak: ${learningData.streakCount}`;
     }
@@ -725,6 +768,25 @@ function renderAchievements() {
     progressBar.textContent = Math.floor(percentage) + '%';
 }
 
+// Show which wordlists studied today
+function renderWordlistHistory() {
+    let historyDiv = document.getElementById('wordlist-history');
+    historyDiv.innerHTML = '';
+    let todayKey = new Date().toISOString().split('T')[0];
+
+    if (learningData.wordlistStudyHistory[todayKey]) {
+        let ul = document.createElement('ul');
+        for (let wl in learningData.wordlistStudyHistory[todayKey]) {
+            let li = document.createElement('li');
+            li.textContent = `${wl}: studied ${learningData.wordlistStudyHistory[todayKey][wl]} times today`;
+            ul.appendChild(li);
+        }
+        historyDiv.appendChild(ul);
+    } else {
+        historyDiv.textContent = "No wordlist studied today yet.";
+    }
+}
+
 function answerQuestion(yes) {
     if (yes) {
         alert("Yay! Keep going! (✿◠‿◠)");
@@ -757,6 +819,7 @@ exportBtn.addEventListener('click', () => {
 // Initial render
 renderCalendar();
 renderAchievements();
+renderWordlistHistory();
 </script>
 </body>
 </html>
