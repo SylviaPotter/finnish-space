@@ -254,6 +254,26 @@
             });
         }
 
+        // Function to navigate to the next page
+        function nextPage() {
+            if ((currentPage + 1) * itemsPerPage < words.length) {
+                saveUserAnswers(); // Save user inputs
+                currentPage++;
+                renderPage();
+                updatePaginationButtons();
+            }
+        }
+
+        // Function to navigate to the previous page
+        function prevPage() {
+            if (currentPage > 0) {
+                saveUserAnswers(); // Save user inputs
+                currentPage--;
+                renderPage();
+                updatePaginationButtons();
+            }
+        }
+
         // Handle submit button click to evaluate answers
         function submitAnswers() {
             saveUserAnswers();
