@@ -46,7 +46,7 @@ The **Spelling Quiz** helps you practice writing Finnish words correctly based o
 
 
 
-## Feel free to explore, upload your own vocabulary lists to uploads folder, and have fun while learning Finnish!
+## Feel free to explore, upload your own vocabulary lists to **new-uploads branch*, and have fun while learning Finnish!
 
 > **Contact & Contribution**: Contributions are welcome! If you find a bug or have an idea to improve the learning experience, please feel free to contribute via Pull Requests or Issues on the [GitHub repository](https://github.com/SylviaPotter/finnish-space).
 
