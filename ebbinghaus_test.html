@@ -337,7 +337,7 @@
 </footer>
 
 <script>
-// Data structure
+
 let defaultData = {
     wordProgress: {},
     masteredCount: 0,
@@ -370,7 +370,7 @@ const repoBaseUrl = 'https://api.github.com/repos/SylviaPotter/finnish-space/con
 const fileSelect = document.getElementById('fileSelect');
 const jsonFileSelect = document.getElementById('jsonFileSelect');
 
-// Fetch JSON files (progress)
+
 async function fetchAllJsonFiles() {
     jsonFileSelect.innerHTML = '<option value="">Loading...</option>';
     let allJsonFiles = [];
@@ -383,7 +383,7 @@ async function fetchAllJsonFiles() {
     }
 }
 
-// Fetch XLSX files (wordlist)
+
 async function fetchAllXlsxFiles() {
     fileSelect.innerHTML = '<option value="">Loading...</option>';
     let allXlsxFiles = [];
@@ -396,7 +396,7 @@ async function fetchAllXlsxFiles() {
     }
 }
 
-// Recursive fetch for files with given extension
+
 async function fetchFilesRecursive(path, extension) {
     const url = `${repoBaseUrl}${path}`;
     const response = await fetch(url);
