@@ -4,6 +4,7 @@
 
 1. [Word Matching Game](https://sylviapotter.github.io/finnish-space/word_matching_game.html)
 2. [Spelling Quiz](https://sylviapotter.github.io/finnish-space/finnish_spelling_quiz.html)
+3. [Ebbinghaus Test](https://sylviapotter.github.io/finnish-space/ebbinghaus_test.html)
 
 ---
 
