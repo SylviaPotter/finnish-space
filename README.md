@@ -1,11 +1,9 @@
 ## Welcome to Finnish Space
 
-**Finnish Space** is a personal Finnish learning website designed to help users memorize Finnish vocabulary through interactive activities. The site contains two main learning tools:
+**Finnish Space** is is your friendly companion for mastering Finnish vocabulary through fun and interactive activities. The site contains two main learning tools:
 
 1. [Word Matching Game](https://sylviapotter.github.io/finnish-space/word_matching_game.html)
 2. [Spelling Quiz](https://sylviapotter.github.io/finnish-space/finnish_spelling_quiz.html)
-
-The goal of **Finnish Space** is to make language learning enjoyable and engaging by using game-like approaches that improve memorization and retention.
 
 ---
 
