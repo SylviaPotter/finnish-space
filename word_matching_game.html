@@ -243,31 +243,49 @@
                 column.appendChild(column.children[Math.random() * i | 0]);
             }
         }
+        
+    // Function to play audio for the Finnish word
+    function playAudio(word) {
+        const audioBaseUrl = 'https://raw.githubusercontent.com/SylviaPotter/finnish-space/main/audio_files/files/SM1/';
+        const audioUrl = `${audioBaseUrl}${encodeURIComponent(word)}.mp3`;
 
-        function addClickEvents() {
-            let selectedCard = null;
-            document.querySelectorAll('.word-card').forEach(card => {
-                card.addEventListener('click', function() {
-                    if (card.classList.contains('matched') || card === selectedCard) {
-                        return; // Ignore already matched or re-selected cards
+        const audio = new Audio(audioUrl);
+        audio.play().catch(error => {
+            console.error('Audio playback failed:', error);
+            alert('Audio file not found for this word.');
+        });
+    }
+
+    // Modified addClickEvents function to include audio functionality for Finnish words
+    function addClickEvents() {
+        let selectedCard = null;
+        document.querySelectorAll('.word-card').forEach(card => {
+            card.addEventListener('click', function () {
+                if (card.classList.contains('matched') || card === selectedCard) {
+                    return; // Ignore already matched or re-selected cards
+                }
+
+                // Play audio only for Finnish words
+                if (card.parentElement.id === 'finnish-column') {
+                    playAudio(card.dataset.matchId);
+                }
+
+                card.classList.add('selected');
+
+                if (!selectedCard) {
+                    selectedCard = card;
+                } else {
+                    if (selectedCard.dataset.matchId === card.dataset.matchId) {
+                        selectedCard.classList.add('matched');
+                        card.classList.add('matched');
                     }
-
-                    card.classList.add('selected');
-
-                    if (!selectedCard) {
-                        selectedCard = card;
-                    } else {
-                        if (selectedCard.dataset.matchId === card.dataset.matchId) {
-                            selectedCard.classList.add('matched');
-                            card.classList.add('matched');
-                        }
-                        selectedCard.classList.remove('selected');
-                        card.classList.remove('selected');
-                        selectedCard = null;
-                    }
-                });
+                    selectedCard.classList.remove('selected');
+                    card.classList.remove('selected');
+                    selectedCard = null;
+                }
             });
-        }
+        });
+    }
 
         function updatePaginationButtons() {
             document.getElementById('prevButton').disabled = currentPage === 0;
