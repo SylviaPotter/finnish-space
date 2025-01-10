@@ -244,48 +244,88 @@
             }
         }
         
-    // Function to play audio for the Finnish word
-    function playAudio(word) {
-        const audioBaseUrl = 'https://raw.githubusercontent.com/SylviaPotter/finnish-space/main/audio_files/files/SM1/';
-        const audioUrl = `${audioBaseUrl}${encodeURIComponent(word)}.mp3`;
+const repoBaseUrl = 'https://api.github.com/repos/SylviaPotter/finnish-space/contents/';
+const audioBaseUrl = 'https://raw.githubusercontent.com/SylviaPotter/finnish-space/main/';
+let audioFilesMap = {}; // 存储音频文件映射表
 
-        const audio = new Audio(audioUrl);
-        audio.play().catch(error => {
-            console.error('Audio playback failed:', error);
-            alert('Audio file not found for this word.');
-        });
+// 递归获取所有 .mp3 文件
+async function fetchAllMp3Files(path = '') {
+    const url = `${repoBaseUrl}${path}`;
+    try {
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`Failed to fetch: ${url}`);
+        }
+        const items = await response.json();
+        for (const item of items) {
+            if (item.type === 'file' && item.name.endsWith('.mp3')) {
+                const fileName = decodeURIComponent(item.name.replace('.mp3', '').trim());
+                audioFilesMap[fileName] = item.path; // 以文件名为键，存储文件路径
+            } else if (item.type === 'dir') {
+                await fetchAllMp3Files(item.path); // 递归获取子文件夹
+            }
+        }
+    } catch (error) {
+        console.error('Error fetching .mp3 files:', error);
     }
+}
 
-    // Modified addClickEvents function to include audio functionality for Finnish words
-    function addClickEvents() {
-        let selectedCard = null;
-        document.querySelectorAll('.word-card').forEach(card => {
-            card.addEventListener('click', function () {
-                if (card.classList.contains('matched') || card === selectedCard) {
-                    return; // Ignore already matched or re-selected cards
-                }
+// 初始化加载所有音频文件
+async function initializeAudioFiles() {
+    await fetchAllMp3Files();
+    console.log('Audio files map:', audioFilesMap); // 调试输出
+}
 
-                // Play audio only for Finnish words
-                if (card.parentElement.id === 'finnish-column') {
-                    playAudio(card.dataset.matchId);
-                }
-
-                card.classList.add('selected');
-
-                if (!selectedCard) {
-                    selectedCard = card;
-                } else {
-                    if (selectedCard.dataset.matchId === card.dataset.matchId) {
-                        selectedCard.classList.add('matched');
-                        card.classList.add('matched');
-                    }
-                    selectedCard.classList.remove('selected');
-                    card.classList.remove('selected');
-                    selectedCard = null;
-                }
-            });
-        });
+// 播放音频文件
+function playAudio(word) {
+    const filePath = audioFilesMap[word.trim()];
+    if (!filePath) {
+        alert(`No audio file found for the word: ${word}`);
+        return;
     }
+    const audioUrl = `${audioBaseUrl}${filePath}`;
+    console.log('Playing audio from:', audioUrl); // 调试输出
+
+    const audio = new Audio(audioUrl);
+    audio.play().catch(error => {
+        console.error('Audio playback failed:', error);
+        alert(`Audio playback failed for the word: ${word}`);
+    });
+}
+
+// 更新 addClickEvents 方法
+function addClickEvents() {
+    let selectedCard = null;
+    document.querySelectorAll('.word-card').forEach(card => {
+        card.addEventListener('click', function () {
+            if (card.classList.contains('matched') || card === selectedCard) {
+                return; // Ignore already matched or re-selected cards
+            }
+
+            // 播放音频（仅针对芬兰语单词）
+            if (card.parentElement.id === 'finnish-column') {
+                playAudio(card.dataset.matchId);
+            }
+
+            card.classList.add('selected');
+
+            if (!selectedCard) {
+                selectedCard = card;
+            } else {
+                if (selectedCard.dataset.matchId === card.dataset.matchId) {
+                    selectedCard.classList.add('matched');
+                    card.classList.add('matched');
+                }
+                selectedCard.classList.remove('selected');
+                card.classList.remove('selected');
+                selectedCard = null;
+            }
+        });
+    });
+}
+
+// 页面加载时初始化音频文件
+initializeAudioFiles();
 
         function updatePaginationButtons() {
             document.getElementById('prevButton').disabled = currentPage === 0;
