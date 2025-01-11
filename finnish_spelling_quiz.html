@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <title>Finnish Spelling Quiz</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
@@ -51,6 +51,7 @@
             margin-top: 20px;
             font-size: 1.2em;
         }
+
         /* 三步选择区域 */
         #multiStepContainer {
             border: 2px solid #888;
@@ -79,15 +80,52 @@
         #multiStepContainer li:hover {
             background-color: #f2f2f2;
         }
+
+        /* API Key & 日志样式 */
+        #apiKeyContainer {
+            margin: 20px 0;
+        }
+        #apiKey {
+            padding: 8px;
+            font-size: 14px;
+            margin-right: 8px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            width: 200px;
+        }
+        #logContainer {
+            max-width: 600px;
+            margin: 20px auto;
+            text-align: left;
+            color: #b00; /* 红色提示 */
+            border: 1px dashed #999;
+            padding: 10px;
+            border-radius: 4px;
+            display: none; /* 默认隐藏 */
+        }
+        .log-toggle-container {
+            margin-top: 20px;
+        }
+        .log-toggle-container button {
+            font-size: 12px;
+            padding: 5px 8px;
+        }
     </style>
 </head>
+
 <body>
     <h1>Finnish Spelling Quiz</h1>
-    <!-- 修改提示文案 -->
     <p>Select an Excel (.xlsx) file from your local device, or use existing wordlists.</p>
+
+    <!-- 新增：API Key 区域 -->
+    <div id="apiKeyContainer">
+        <label for="apiKey">Enter your GitHub API Key:</label>
+        <input type="password" id="apiKey" placeholder="GitHub API Key">
+        <button onclick="setApiKey()">Set API Key</button>
+    </div>
+
     <input type="file" id="fileUpload" accept=".xlsx"><br><br>
 
-    <!-- 移除“一把抓”按钮和下拉框，改成三步选择按钮 + Start Quiz -->
     <button onclick="startMultiStepSelection()">Choose a WordList</button>
     <br><br>
     <button onclick="startQuiz()">Start Quiz</button>
@@ -103,31 +141,93 @@
     <!-- 三步选择容器 -->
     <div id="multiStepContainer">
         <h2>WordList Selection</h2>
-        <!-- 按要求改文案： -->
         <p id="stepDescription">Step 1: Choose your Book</p>
         <div id="directoryList"></div>
     </div>
 
+    <!-- 日志容器 + 按钮 -->
+    <div id="logContainer"></div>
+    <div class="log-toggle-container">
+        <button onclick="toggleLogs()">Show/Hide Logs</button>
+    </div>
+
     <script>
+        // ------------------ (1) API Key & 日志功能 ------------------
+        let apiKey = ""; // 由用户在网页上输入
+        function setApiKey() {
+            const input = document.getElementById("apiKey");
+            apiKey = input.value.trim();
+            if (apiKey) {
+                logMessage("GitHub API Key has been set!", false);
+                alert("API Key has been set!");
+            } else {
+                logMessage("Please enter a valid GitHub API Key.", true);
+            }
+        }
+
+        // 日志记录函数：追加到 #logContainer
+        function logMessage(message, isError = true) {
+            const logContainer = document.getElementById("logContainer");
+            const p = document.createElement("p");
+            p.textContent = (isError ? "Error: " : "") + message;
+            p.style.color = isError ? "red" : "green";
+            logContainer.appendChild(p);
+            console.error(message);
+        }
+
+        // 切换日志显示/隐藏
+        function toggleLogs() {
+            const logContainer = document.getElementById("logContainer");
+            if (logContainer.style.display === "none") {
+                logContainer.style.display = "block";
+            } else {
+                logContainer.style.display = "none";
+            }
+        }
+
+        /**
+         * 带认证信息的 fetch，用于返回 JSON
+         */
+        async function fetchJSONWithAuth(url) {
+            const headers = {
+                Accept: 'application/vnd.github.v3+json',
+            };
+            if (apiKey) {
+                headers['Authorization'] = `token ${apiKey}`;
+            }
+            const response = await fetch(url, { headers });
+            if (!response.ok) {
+                if (response.status === 401) {
+                    throw new Error("Invalid API Key (401). Please check your token.");
+                } else if (response.status === 403) {
+                    throw new Error("Rate limit exceeded or access forbidden (403).");
+                } else {
+                    throw new Error(`Error fetching JSON: ${response.status} ${response.statusText}`);
+                }
+            }
+            return await response.json();
+        }
+
+        // ----------------------------------------------------------
+        // (2) 原有逻辑：Finnish Spelling Quiz
+        // ----------------------------------------------------------
         let words = [];
         let currentPage = 0;
         const itemsPerPage = 5;
 
-        // GitHub 仓库基础信息
+        // 仓库基础信息
         const repoOwner = "SylviaPotter";
         const repoName = "finnish-space";
-        const defaultBranch = "main"; // 如果是master请改成 "master"
+        const defaultBranch = "main";
         const repoBaseUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/`;
 
-        // 原有：本地文件上传
+        // 本地文件上传
         document.getElementById('fileUpload').addEventListener('change', function(event) {
             const file = event.target.files[0];
             if (file) {
                 readExcelFile(file);
             }
         });
-
-        // （删除了一把抓相关 fetchAllXlsxFiles() 等函数）
 
         // 三步选择： Book → Unit → WordList
         let currentStep = 1;
@@ -138,7 +238,7 @@
         const directoryList = document.getElementById("directoryList");
         const stepDescription = document.getElementById("stepDescription");
 
-        // 按钮：Choose a WordList
+        // Choose a WordList
         async function startMultiStepSelection() {
             multiStepContainer.style.display = "block";
             currentStep = 1;
@@ -146,7 +246,6 @@
             selectedUnitFolder = "";
             stepDescription.textContent = "Step 1: Choose your Book";
 
-            // 加载 "files" 下的子文件夹(相当于 Book)
             await loadDirectories("files");
         }
 
@@ -155,15 +254,14 @@
             directoryList.innerHTML = "Loading...";
             const url = `${repoBaseUrl}${path}`;
             try {
-                const resp = await fetch(url);
-                if (!resp.ok) throw new Error(`Network response was not ok: ${path}`);
-                const data = await resp.json();
+                logMessage(`Loading directories from: ${url}`, false);
+                const data = await fetchJSONWithAuth(url);
+                logMessage(`Successfully loaded directories from: ${url}`, false);
 
-                // 只显示文件夹
                 const dirs = data.filter(item => item.type === "dir");
                 renderDirectoryList(dirs, path);
             } catch (err) {
-                console.error(err);
+                logMessage(`Error loading directories from: ${path} - ${err.message}`, true);
                 directoryList.innerHTML = `<p>Error: ${err.message}</p>`;
             }
         }
@@ -187,14 +285,12 @@
 
         async function handleDirectoryClick(folderName, parentPath) {
             if (currentStep === 1) {
-                // Step 1 -> Step 2
                 selectedBookFolder = `${parentPath}/${folderName}`;
                 currentStep = 2;
                 stepDescription.textContent = "Step 2: Choose your Unit";
                 await loadDirectories(selectedBookFolder);
 
             } else if (currentStep === 2) {
-                // Step 2 -> Step 3
                 selectedUnitFolder = `${parentPath}/${folderName}`;
                 currentStep = 3;
                 stepDescription.textContent = "Step 3: Select a WordList";
@@ -207,11 +303,10 @@
             directoryList.innerHTML = "Loading wordlists...";
             const url = `${repoBaseUrl}${unitPath}`;
             try {
-                const resp = await fetch(url);
-                if (!resp.ok) throw new Error(`Network response was not ok: ${unitPath}`);
-                const data = await resp.json();
+                logMessage(`Loading xlsx files from: ${url}`, false);
+                const data = await fetchJSONWithAuth(url);
+                logMessage(`Successfully loaded xlsx info from: ${url}`, false);
 
-                // 只显示 .xlsx 文件
                 const xlsxFiles = data.filter(item => item.type === "file" && item.name.endsWith(".xlsx"));
                 if (xlsxFiles.length === 0) {
                     directoryList.innerHTML = "<p>No .xlsx files found in this folder.</p>";
@@ -219,12 +314,12 @@
                 }
                 renderXlsxFileList(xlsxFiles);
             } catch (err) {
-                console.error(err);
+                logMessage(`Error loading xlsx from: ${unitPath} - ${err.message}`, true);
                 directoryList.innerHTML = `<p>Error: ${err.message}</p>`;
             }
         }
 
-        // 手动拼接 Raw URL（可行）或使用 item.download_url（若它可用）
+        // 手动拼接 Raw URL
         function buildRawUrl(filePath) {
             return `https://raw.githubusercontent.com/${repoOwner}/${repoName}/${defaultBranch}/${filePath}`;
         }
@@ -237,20 +332,19 @@
                 const li = document.createElement("li");
                 li.textContent = file.name;
                 li.addEventListener("click", async () => {
-                    // 选中 WordList => 关闭选择面板
                     multiStepContainer.style.display = "none";
 
                     try {
-                        // 用 raw URL 下载
                         const rawUrl = buildRawUrl(file.path);
+                        logMessage(`Fetching xlsx from raw URL: ${rawUrl}`, false);
+
                         await fetchXlsxFileFromUrl(rawUrl);
 
-                        // 处理完后（words 已填充）
                         currentPage = 0;
                         renderPage();
                         updatePaginationButtons();
                     } catch (err) {
-                        console.error(err);
+                        logMessage(`Error selecting xlsx file: ${err.message}`, true);
                     }
                 });
                 ul.appendChild(li);
@@ -260,19 +354,21 @@
 
         async function fetchXlsxFileFromUrl(fileUrl) {
             try {
+                logMessage(`Fetching xlsx ArrayBuffer from: ${fileUrl}`, false);
                 const response = await fetch(fileUrl);
                 if (!response.ok) {
                     throw new Error("Network response was not ok");
                 }
                 const arrayBuffer = await response.arrayBuffer();
                 readExcelBuffer(arrayBuffer);
+                logMessage("File successfully fetched and processed.", false);
             } catch (error) {
-                console.error("Error fetching or processing the file:", error);
+                logMessage(`Error fetching or processing the file: ${error.message}`, true);
                 alert("There was an error fetching or processing the file.");
             }
         }
 
-        // 原有：本地文件解析
+        // 本地文件
         function readExcelFile(file) {
             const reader = new FileReader();
             reader.onload = function(e) {
@@ -282,7 +378,6 @@
             reader.readAsArrayBuffer(file);
         }
 
-        // 原有：Excel buffer -> words
         function readExcelBuffer(buffer) {
             const workbook = XLSX.read(buffer, { type: 'array' });
             const firstSheetName = workbook.SheetNames[0];
@@ -299,23 +394,19 @@
             words = shuffle(words);
         }
 
-        // 原有：startQuiz
         async function startQuiz() {
             if (words.length === 0) {
                 alert("Please upload a valid file or pick a WordList first.");
                 return;
             }
-            // 如果 words 已经有数据，就渲染
             renderPage();
             updatePaginationButtons();
         }
 
-        // 原有：随机化
         function shuffle(array) {
             return array.sort(() => Math.random() - 0.5);
         }
 
-        // 原有：Render quiz page
         function renderPage() {
             const quizContainer = document.getElementById('quiz-container');
             quizContainer.innerHTML = '';
@@ -344,7 +435,6 @@
             updatePaginationButtons();
         }
 
-        // 原有：保存输入
         function saveUserAnswers() {
             const inputs = document.querySelectorAll('.input-box');
             inputs.forEach(input => {
@@ -353,7 +443,6 @@
             });
         }
 
-        // 原有：更新翻页按钮
         function updatePaginationButtons() {
             document.getElementById('prevButton').disabled = currentPage === 0;
             document.getElementById('nextButton').disabled = (currentPage + 1) * itemsPerPage >= words.length;
@@ -361,7 +450,6 @@
                 ((currentPage + 1) * itemsPerPage >= words.length) ? 'block' : 'none';
         }
 
-        // 原有：下一页
         function nextPage() {
             if ((currentPage + 1) * itemsPerPage < words.length) {
                 saveUserAnswers();
@@ -371,7 +459,6 @@
             }
         }
 
-        // 原有：上一页
         function prevPage() {
             if (currentPage > 0) {
                 saveUserAnswers();
@@ -381,20 +468,17 @@
             }
         }
 
-        // 原有：提交作答
         function submitAnswers() {
             saveUserAnswers();
 
             const resultDiv = document.getElementById('result');
-            resultDiv.innerHTML = ''; // Clear previous results
+            resultDiv.innerHTML = '';
 
             let correctCount = 0;
 
-            // Create table to display results
             const resultTable = document.createElement('table');
             resultTable.id = 'result-table';
 
-            // Add table headers
             const headerRow = document.createElement('tr');
             headerRow.innerHTML = `
                 <th>English</th>
@@ -404,7 +488,6 @@
             `;
             resultTable.appendChild(headerRow);
 
-            // Fill in the table rows
             words.forEach(pair => {
                 const userAnswer = pair.userAnswer.toLowerCase();
                 const correctAnswer = pair.finnish.toLowerCase();
