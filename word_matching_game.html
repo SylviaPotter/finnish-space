@@ -48,9 +48,14 @@
     </style>
 </head>
 <body>
-    <h1>Word Matching Game</h1>
-    <p>Select an Excel (.xlsx) file to start.</p>
+    <h1>Word Matching Game with Audio</h1>
+    <p>Select an Excel (.xlsx) file from your local device or from the available list below.</p>
     <input type="file" id="fileUpload" accept=".xlsx" /><br><br>
+    <button onclick="fetchAllXlsxFiles()">Load Files from GitHub Repository</button>
+    <select id="fileSelect">
+        <option value="">Select a file from GitHub...</option>
+    </select>
+    <br><br>
     <button onclick="startGame()">Start Matching Game</button>
     <div class="word-container" id="word-container">
         <div class="word-column" id="finnish-column"></div>
@@ -62,15 +67,14 @@
     </div>
 
     <script>
-        let words = [];
-        let audioFilesMap = {};
-        const itemsPerPage = 5;
-        let currentPage = 0;
-
-        // Fetch and initialize audio files
         const repoBaseUrl = 'https://api.github.com/repos/SylviaPotter/finnish-space/contents/';
         const audioBaseUrl = 'https://raw.githubusercontent.com/SylviaPotter/finnish-space/main/';
+        let audioFilesMap = {};
+        let words = [];
+        let currentPage = 0;
+        const itemsPerPage = 5;
 
+        // Load all .mp3 files into an audio map
         async function fetchAllMp3Files(path = '') {
             const url = `${repoBaseUrl}${path}`;
             try {
@@ -92,10 +96,8 @@
 
         async function initializeAudioFiles() {
             await fetchAllMp3Files();
-            console.log('Audio files initialized:', audioFilesMap);
         }
 
-        // Load words from Excel
         document.getElementById('fileUpload').addEventListener('change', function(event) {
             const file = event.target.files[0];
             if (file) {
@@ -109,40 +111,68 @@
 
                     words = rows.map(row => {
                         const [finnish, english] = row;
-                        if (finnish && english) return { finnish: finnish.trim(), english: english.trim() };
-                    }).filter(pair => pair); // Filter out invalid entries
+                        if (finnish && english) {
+                            return { finnish: finnish.trim(), english: english.trim() };
+                        }
+                    }).filter(pair => pair);
                 };
                 reader.readAsArrayBuffer(file);
             }
         });
 
-        // Start game logic
-        function startGame() {
-            if (words.length === 0) {
-                alert("Please upload a valid word list first.");
-                return;
+        async function fetchFileAndStartGame(fileUrl) {
+            try {
+                const response = await fetch(fileUrl);
+                if (!response.ok) throw new Error('Network response was not ok');
+                const arrayBuffer = await response.arrayBuffer();
+                readExcelBuffer(arrayBuffer);
+                words = shuffle(words);
+                currentPage = 0;
+                renderPage();
+                updatePaginationButtons();
+            } catch (error) {
+                console.error('Error fetching or processing the file:', error);
             }
-            words = shuffle(words);
-            currentPage = 0;
-            renderPage();
-            updatePaginationButtons();
         }
 
-        // Shuffle an array
+        function readExcelBuffer(buffer) {
+            const workbook = XLSX.read(buffer, { type: 'array' });
+            const firstSheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[firstSheetName];
+            const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+            words = rows.map(row => {
+                const [finnish, english] = row;
+                if (finnish && english) {
+                    return { finnish: finnish.trim(), english: english.trim() };
+                }
+            }).filter(pair => pair);
+        }
+
+        function playAudio(word) {
+            const filePath = audioFilesMap[word.trim()];
+            if (!filePath) {
+                alert(`No audio file found for the word: ${word}`);
+                return;
+            }
+            const audioUrl = `${audioBaseUrl}${filePath}`;
+            const audio = new Audio(audioUrl);
+            audio.play().catch(error => {
+                console.error('Audio playback failed:', error);
+            });
+        }
+
         function shuffle(array) {
             return array.sort(() => Math.random() - 0.5);
         }
 
-        // Render current page
         function renderPage() {
             const finnishColumn = document.getElementById('finnish-column');
             const englishColumn = document.getElementById('english-column');
             finnishColumn.innerHTML = '';
             englishColumn.innerHTML = '';
-
             const start = currentPage * itemsPerPage;
             const end = Math.min(start + itemsPerPage, words.length);
-            const pageWords = words.slice(start, end);
+            let pageWords = words.slice(start, end);
 
             pageWords.forEach(pair => {
                 const finnishCard = document.createElement('div');
@@ -159,20 +189,28 @@
                 englishColumn.appendChild(englishCard);
             });
 
+            shuffleColumnCards(finnishColumn);
+            shuffleColumnCards(englishColumn);
             addClickEvents();
         }
 
-        // Add click events
+        function shuffleColumnCards(column) {
+            for (let i = column.children.length; i >= 0; i--) {
+                column.appendChild(column.children[Math.random() * i | 0]);
+            }
+        }
+
         function addClickEvents() {
             let selectedCard = null;
             document.querySelectorAll('.word-card').forEach(card => {
-                card.addEventListener('click', function() {
+                card.addEventListener('click', function () {
                     if (card.classList.contains('matched') || card === selectedCard) return;
 
-                    if (card.parentElement.id === 'finnish-column') playAudio(card.dataset.matchId);
+                    if (card.parentElement.id === 'finnish-column') {
+                        playAudio(card.dataset.matchId);
+                    }
 
                     card.classList.add('selected');
-
                     if (!selectedCard) {
                         selectedCard = card;
                     } else {
@@ -188,22 +226,11 @@
             });
         }
 
-        // Play audio for Finnish word
-        function playAudio(word) {
-            const filePath = audioFilesMap[word.trim()];
-            if (!filePath) {
-                alert(`No audio file found for the word: ${word}`);
-                return;
-            }
-            const audioUrl = `${audioBaseUrl}${filePath}`;
-            const audio = new Audio(audioUrl);
-            audio.play().catch(error => {
-                console.error('Audio playback failed:', error);
-                alert(`Audio playback failed for the word: ${word}`);
-            });
+        function updatePaginationButtons() {
+            document.getElementById('prevButton').disabled = currentPage === 0;
+            document.getElementById('nextButton').disabled = (currentPage + 1) * itemsPerPage >= words.length;
         }
 
-        // Pagination controls
         function nextPage() {
             if ((currentPage + 1) * itemsPerPage < words.length) {
                 currentPage++;
@@ -220,12 +247,6 @@
             }
         }
 
-        function updatePaginationButtons() {
-            document.getElementById('prevButton').disabled = currentPage === 0;
-            document.getElementById('nextButton').disabled = (currentPage + 1) * itemsPerPage >= words.length;
-        }
-
-        // Initialize audio files on load
         initializeAudioFiles();
     </script>
 </body>
