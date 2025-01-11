@@ -67,7 +67,6 @@
     </div>
 
     <script>
-        // Original Game Variables and Functions
         let words = [];
         let currentPage = 0;
         const itemsPerPage = 5;
@@ -94,6 +93,7 @@
             }
         });
 
+        // Fetch all .xlsx files recursively from GitHub repository
         const repoBaseUrl = 'https://api.github.com/repos/SylviaPotter/finnish-space/contents/';
         const fileSelect = document.getElementById('fileSelect');
 
@@ -101,6 +101,7 @@
             fileSelect.innerHTML = '<option value="">Loading files...</option>'; // Show loading message
             let allXlsxFiles = [];
 
+            // Start recursive fetching from the base URL
             try {
                 allXlsxFiles = await fetchXlsxFilesRecursive('');
                 populateFileSelect(allXlsxFiles);
@@ -110,6 +111,7 @@
             }
         }
 
+        // Recursive function to fetch .xlsx files from a given path
         async function fetchXlsxFilesRecursive(path) {
             const url = `${repoBaseUrl}${path}`;
             try {
@@ -122,8 +124,10 @@
 
                 for (const item of items) {
                     if (item.type === 'file' && item.name.endsWith('.xlsx')) {
+                        // If the item is a .xlsx file, add it to the list
                         xlsxFiles.push(item);
                     } else if (item.type === 'dir') {
+                        // If the item is a directory, fetch its contents recursively
                         const subDirFiles = await fetchXlsxFilesRecursive(item.path);
                         xlsxFiles = xlsxFiles.concat(subDirFiles);
                     }
@@ -136,12 +140,13 @@
             }
         }
 
+        // Populate the select dropdown with the fetched .xlsx files
         function populateFileSelect(files) {
             fileSelect.innerHTML = '<option value="">Select a file from GitHub...</option>';
             files.forEach(file => {
                 const option = document.createElement('option');
                 option.value = file.download_url;
-                option.textContent = file.path; 
+                option.textContent = file.path; // Use file path to provide context of where the file is located
                 fileSelect.appendChild(option);
             });
         }
@@ -165,6 +170,7 @@
             }
         }
 
+        // Fetch selected file from GitHub and start the game
         async function fetchFileAndStartGame(fileUrl) {
             try {
                 const response = await fetch(fileUrl);
@@ -194,7 +200,7 @@
                 if (finnish && english) {
                     return { finnish: finnish.trim(), english: english.trim() };
                 }
-            }).filter(pair => pair);
+            }).filter(pair => pair); // Filter out any invalid entries
         }
 
         function renderPage() {
@@ -207,21 +213,26 @@
             const end = Math.min(start + itemsPerPage, words.length);
             let pageWords = words.slice(start, end);
 
+            // For each word pair, create Finnish and English cards separately in different columns
             pageWords.forEach(pair => {
+                // Create Finnish word card
                 const finnishCard = document.createElement('div');
                 finnishCard.classList.add('word-card');
                 finnishCard.textContent = pair.finnish;
                 finnishCard.dataset.matchId = pair.finnish;
 
+                // Create English word card
                 const englishCard = document.createElement('div');
                 englishCard.classList.add('word-card');
                 englishCard.textContent = pair.english;
                 englishCard.dataset.matchId = pair.finnish;
 
+                // Append cards to respective columns
                 finnishColumn.appendChild(finnishCard);
                 englishColumn.appendChild(englishCard);
             });
 
+            // Shuffle the cards within each column for randomness
             shuffleColumnCards(finnishColumn);
             shuffleColumnCards(englishColumn);
             addClickEvents();
@@ -233,82 +244,51 @@
             }
         }
 
-        // Integrated Audio Playback
-        const audioBaseUrl = 'https://raw.githubusercontent.com/SylviaPotter/finnish-space/main/';
-        let audioFilesMap = {};
-
-        async function fetchAllMp3Files(path = '') {
-            const url = `${repoBaseUrl}${path}`;
-            try {
-                const response = await fetch(url);
-                if (!response.ok) throw new Error(`Failed to fetch: ${url}`);
-                const items = await response.json();
-                for (const item of items) {
-                    if (item.type === 'file' && item.name.endsWith('.mp3')) {
-                        const fileName = decodeURIComponent(item.name.replace('.mp3', '').trim());
-                        audioFilesMap[fileName] = item.path;
-                    } else if (item.type === 'dir') {
-                        await fetchAllMp3Files(item.path);
-                    }
-                }
-            } catch (
-error) {
-                console.error('Error fetching .mp3 files:', error);
-            }
-        }
-
-        async function initializeAudioFiles() {
-            await fetchAllMp3Files();
-            console.log('Audio files map:', audioFilesMap);
-        }
-
         function playAudio(word) {
-            const filePath = audioFilesMap[word.trim()];
-            if (!filePath) {
-                alert(`No audio file found for the word: ${word}`);
-                return;
+    const filePath = audioFilesMap[word.trim()];
+    if (!filePath) {
+        alert(`No audio file found for the word: ${word}`);
+        return;
+    }
+    const audioUrl = `${audioBaseUrl}${filePath}`;
+    console.log('Playing audio from:', audioUrl);
+
+    const audio = new Audio(audioUrl);
+    audio.play().catch(error => {
+        console.error('Audio playback failed:', error);
+        alert(`Audio playback failed for the word: ${word}`);
+    });
+}
+
+function addClickEvents() {
+    let selectedCard = null;
+    document.querySelectorAll('.word-card').forEach(card => {
+        card.addEventListener('click', function () {
+            if (card.classList.contains('matched') || card === selectedCard) {
+                return; // Ignore already matched or re-selected cards
             }
-            const audioUrl = `${audioBaseUrl}${filePath}`;
-            const audio = new Audio(audioUrl);
-            audio.play().catch(error => {
-                console.error('Audio playback failed:', error);
-                alert(`Audio playback failed for the word: ${word}`);
-            });
-        }
 
-        // Initialize audio files on load
-        initializeAudioFiles();
+            // 播放音频（仅针对芬兰语单词）
+            if (card.parentElement.id === 'finnish-column') {
+                playAudio(card.dataset.matchId);
+            }
 
-        // Updated addClickEvents to include audio playback
-        function addClickEvents() {
-            let selectedCard = null;
-            document.querySelectorAll('.word-card').forEach(card => {
-                card.addEventListener('click', function () {
-                    if (card.classList.contains('matched') || card === selectedCard) {
-                        return;
-                    }
+            card.classList.add('selected');
 
-                    // Play audio for Finnish words
-                    if (card.parentElement.id === 'finnish-column') {
-                        playAudio(card.dataset.matchId);
-                    }
-
-                    card.classList.add('selected');
-
-                    if (!selectedCard) {
-                        selectedCard = card;
-                    } else {
-                        if (selectedCard.dataset.matchId === card.dataset.matchId) {
-                            selectedCard.classList.add('matched');
-                            card.classList.add('matched');
-                        }
-                        selectedCard.classList.remove('selected');
-                        card.classList.remove('selected');
-                        selectedCard = null;
-                    }
-                });
-            });
-        }
+            if (!selectedCard) {
+                selectedCard = card;
+            } else {
+                if (selectedCard.dataset.matchId === card.dataset.matchId) {
+                    selectedCard.classList.add('matched');
+                    card.classList.add('matched');
+                }
+                selectedCard.classList.remove('selected');
+                card.classList.remove('selected');
+                selectedCard = null;
+            }
+        });
+    });
+}
 
         function updatePaginationButtons() {
             document.getElementById('prevButton').disabled = currentPage === 0;
@@ -330,6 +310,41 @@ error) {
                 updatePaginationButtons();
             }
         }
+        
+const audioBaseUrl = 'https://raw.githubusercontent.com/SylviaPotter/finnish-space/main/';
+let audioFilesMap = {};
+
+// 递归获取所有 .mp3 文件
+async function fetchAllMp3Files(path = '') {
+    const url = `${repoBaseUrl}${path}`;
+    try {
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`Failed to fetch: ${url}`);
+        }
+        const items = await response.json();
+        for (const item of items) {
+            if (item.type === 'file' && item.name.endsWith('.mp3')) {
+                const fileName = decodeURIComponent(item.name.replace('.mp3', '').trim());
+                audioFilesMap[fileName] = item.path;
+            } else if (item.type === 'dir') {
+                await fetchAllMp3Files(item.path);
+            }
+        }
+    } catch (error) {
+        console.error('Error fetching .mp3 files:', error);
+    }
+}
+
+// 初始化加载所有音频文件
+async function initializeAudioFiles() {
+    await fetchAllMp3Files();
+    console.log('Audio files map:', audioFilesMap);
+}
+
+// 页面加载时初始化音频文件
+initializeAudioFiles();
+
     </script>
 </body>
 </html>
