@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
   <title>Word Matching Game with Two Columns</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
@@ -45,7 +45,6 @@
     .pagination {
       margin-top: 20px;
     }
-
     /* 三步选择区域 - 优化外观 */
     #multiStepContainer {
       border: 2px solid #888;
@@ -79,11 +78,9 @@
       font-style: italic;
       color: #666;
     }
-    /* 让目录项列表稍微缩进 */
     #directoryList ul {
       margin-left: 1.2em;
     }
-
     /* 按钮组 */
     .btn-group {
       margin: 20px 0;
@@ -97,12 +94,49 @@
     button:hover {
       background-color: #eef;
     }
+    /* API Key 输入区样式 */
+    #apiKeyContainer {
+      margin-bottom: 20px;
+    }
+    #apiKey {
+      padding: 8px;
+      font-size: 14px;
+      margin-right: 8px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      width: 200px;
+    }
+    /* 日志区：默认隐藏，点击按钮再显示 */
+    #logContainer {
+      max-width: 600px;
+      margin: 20px auto;
+      text-align: left;
+      color: #b00;
+      display: none; /* 默认不显示 */
+      border: 1px dashed #999;
+      padding: 10px;
+      border-radius: 4px;
+    }
+    .log-toggle-container {
+      margin-top: 30px;
+    }
+    .log-toggle-container button {
+      font-size: 12px;
+      padding: 5px 8px;
+    }
   </style>
 </head>
 
 <body>
   <h1>Word Matching Game</h1>
   <p>Select an Excel (.xlsx) file from your local device, or use existing wordlists.</p>
+
+  <!-- 新增：API Key 输入区 -->
+  <div id="apiKeyContainer">
+    <label for="apiKey">Enter your GitHub API Key:</label>
+    <input type="password" id="apiKey" placeholder="GitHub API Key">
+    <button onclick="setApiKey()">Set API Key</button>
+  </div>
 
   <!-- 本地上传 .xlsx -->
   <input type="file" id="fileUpload" accept=".xlsx" />
@@ -111,7 +145,6 @@
   <div class="btn-group">
     <!-- 三步选择: Book → Unit → .xlsx -->
     <button onclick="startMultiStepSelection()">Choose a WordList</button>
-
     <!-- Start Matching Game 放到下方 -->
     <button onclick="startGame()">Start Matching Game</button>
   </div>
@@ -126,34 +159,104 @@
     <button onclick="nextPage()" id="nextButton" disabled>Next Page</button>
   </div>
 
-  <!-- 三步选择容器 - 改为更人性化的文案 -->
+  <!-- 三步选择容器 -->
   <div id="multiStepContainer">
     <h2>WordList Selection</h2>
     <p id="stepDescription">Step 1: Choose your Book</p>
     <div id="directoryList"></div>
   </div>
 
+  <!-- 日志容器：默认隐藏 -->
+  <div id="logContainer"></div>
+
+  <!-- 底部小按钮：点开/收起日志 -->
+  <div class="log-toggle-container">
+    <button onclick="toggleLogs()">Show/Hide Logs</button>
+  </div>
+
   <script>
     /* 
-      下面是你的原有JS逻辑内容，不做功能改动，只针对UI文案做小修改
-      如把“Step 1: Choose a Book Folder from 'files'”改成“Step 1: Choose your Book” 
-      并保留全部逻辑函数不改。
+      只在 setApiKey() 中额外加一个 alert 提示 “API Key has been set!”。
+      其他功能或逻辑不做任何改动。
     */
+
+    let apiKey = "";
+    function setApiKey() {
+      const input = document.getElementById("apiKey");
+      apiKey = input.value.trim();
+      if (apiKey) {
+        logMessage("GitHub API Key has been set!", false);
+        // 新增：提示框
+        alert("API Key has been set!");
+      } else {
+        logMessage("Please enter a valid GitHub API Key.", true);
+      }
+    }
+
+    // 日志记录函数：将信息追加到#logContainer
+    function logMessage(message, isError = true) {
+      const logContainer = document.getElementById("logContainer");
+      const p = document.createElement("p");
+      p.textContent = (isError ? "Error: " : "") + message;
+      p.style.color = isError ? "red" : "green";
+      logContainer.appendChild(p);
+      console.error(message);
+    }
+
+    // 显示/隐藏日志容器
+    function toggleLogs() {
+      const logContainer = document.getElementById("logContainer");
+      if (logContainer.style.display === "none") {
+        logContainer.style.display = "block";
+      } else {
+        logContainer.style.display = "none";
+      }
+    }
+
+    async function fetchJSONWithAuth(url) {
+      const headers = { Accept: 'application/vnd.github.v3+json' };
+      if (apiKey) {
+        headers['Authorization'] = `token ${apiKey}`;
+      }
+      const response = await fetch(url, { headers });
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error("Invalid API Key (401). Please check your token.");
+        } else if (response.status === 403) {
+          throw new Error("Rate limit exceeded or access forbidden (403).");
+        } else {
+          throw new Error(`Error fetching JSON: ${response.status} ${response.statusText}`);
+        }
+      }
+      return await response.json();
+    }
+
+    async function fetchXlsxFileContent(fileApiUrl) {
+      try {
+        logMessage(`Fetching XLSX content from: ${fileApiUrl}`, false);
+        const fileData = await fetchJSONWithAuth(fileApiUrl);
+        if (!fileData.content) {
+          throw new Error("The API response does not contain a 'content' field.");
+        }
+        const base64Data = fileData.content;
+        const binaryString = atob(base64Data);
+        const binaryData = Uint8Array.from(binaryString, char => char.charCodeAt(0));
+        return binaryData.buffer;
+      } catch (err) {
+        throw new Error(`Error fetching XLSX file content: ${err.message}`);
+      }
+    }
 
     let words = [];
     let currentPage = 0;
     const itemsPerPage = 5;
-
-    // mp3 文件映射
     let mp3Map = {};
 
-    // GitHub 基础
     const repoOwner = "SylviaPotter";
     const repoName = "finnish-space";
-    const defaultBranch = "main"; // 如果是master则改成master
+    const defaultBranch = "main";
     const repoBaseUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/`;
 
-    // 本地上传 xlsx
     document.getElementById('fileUpload').addEventListener('change', function(event) {
       const file = event.target.files[0];
       if (file) {
@@ -173,20 +276,16 @@
           }).filter(pair => pair);
         };
         reader.readAsArrayBuffer(file);
+        logMessage("Local Excel file loaded successfully.", false);
       }
     });
 
-    // 递归获取 mp3
     async function fetchMp3FilesRecursive(path) {
       const url = `${repoBaseUrl}${path}`;
       try {
-        const response = await fetch(url);
-        if (!response.ok) {
-          throw new Error("Network response was not ok");
-        }
-        const items = await response.json();
+        logMessage(`Fetching MP3 from: ${url}`, false);
+        const items = await fetchJSONWithAuth(url);
         let mp3Files = [];
-
         for (const item of items) {
           if (item.type === 'file' && item.name.endsWith('.mp3')) {
             mp3Files.push(item);
@@ -197,7 +296,7 @@
         }
         return mp3Files;
       } catch (error) {
-        console.error(`Error fetching mp3 from ${url}:`, error);
+        logMessage(`Error fetching mp3 from ${path}: ${error.message}`, true);
         return [];
       }
     }
@@ -209,7 +308,6 @@
       });
     }
 
-    // 游戏逻辑
     function shuffle(array) {
       return array.sort(() => Math.random() - 0.5);
     }
@@ -265,7 +363,6 @@
       let selectedCard = null;
       document.querySelectorAll('.word-card').forEach(card => {
         card.addEventListener('click', function() {
-          // 若点击芬兰语卡片，尝试播放对应 mp3
           const finnishWord = card.dataset.matchId;
           if (mp3Map[finnishWord]) {
             const audio = new Audio(mp3Map[finnishWord]);
@@ -313,7 +410,6 @@
       }
     }
 
-    // 三步选择
     let currentStep = 1;
     let selectedBookFolder = "";
     let selectedUnitFolder = "";
@@ -327,9 +423,7 @@
       currentStep = 1;
       selectedBookFolder = "";
       selectedUnitFolder = "";
-      // 改文案更人性化
       stepDescription.textContent = "Step 1: Choose your Book";
-
       await loadDirectories("files");
     }
 
@@ -337,14 +431,14 @@
       directoryList.innerHTML = "Loading...";
       const url = `${repoBaseUrl}${path}`;
       try {
-        const resp = await fetch(url);
-        if (!resp.ok) throw new Error(`Network response was not ok: ${path}`);
-        const data = await resp.json();
+        logMessage(`Loading directories from: ${url}`, false);
+        const data = await fetchJSONWithAuth(url);
+        logMessage(`Successfully loaded directories from: ${url}`, false);
 
         const dirs = data.filter(item => item.type === "dir");
         renderDirectoryList(dirs, path);
       } catch (err) {
-        console.error(err);
+        logMessage(`Failed to load directories from: ${path} - ${err.message}`, true);
         directoryList.innerHTML = `<p>Error: ${err.message}</p>`;
       }
     }
@@ -385,9 +479,9 @@
       directoryList.innerHTML = "Loading xlsx files...";
       const url = `${repoBaseUrl}${unitPath}`;
       try {
-        const resp = await fetch(url);
-        if (!resp.ok) throw new Error(`Network response was not ok: ${unitPath}`);
-        const data = await resp.json();
+        logMessage(`Loading xlsx files from: ${url}`, false);
+        const data = await fetchJSONWithAuth(url);
+        logMessage(`Successfully loaded xlsx info from: ${url}`, false);
 
         const xlsxFiles = data.filter(item => item.type === "file" && item.name.endsWith(".xlsx"));
         if (xlsxFiles.length === 0) {
@@ -396,13 +490,11 @@
         }
         renderXlsxFileList(xlsxFiles);
       } catch (err) {
-        console.error(err);
+        logMessage(`Failed to load xlsx from: ${unitPath} - ${err.message}`, true);
         directoryList.innerHTML = `<p>Error: ${err.message}</p>`;
       }
     }
 
-    // 假设依旧用 file.download_url
-    // （若你改成拼接 Raw URL 就留在 fetchFileAndStartGame 里，这里不变）
     function renderXlsxFileList(xlsxFiles) {
       directoryList.innerHTML = "";
       const ul = document.createElement("ul");
@@ -411,12 +503,11 @@
         const li = document.createElement("li");
         li.textContent = file.name;
         li.addEventListener("click", async () => {
-          // 收起面板
           multiStepContainer.style.display = "none";
           try {
-            await fetchFileAndStartGame(file.download_url);
+            logMessage(`Fetching XLSX file: ${file.url}`, false);
+            await fetchFileAndStartGame(file.url);
 
-            // 拼出音频路径
             const audioPath = selectedUnitFolder.replace(/^files/, "audio_files/files");
             const mp3Files = await fetchMp3FilesRecursive(audioPath);
             populateMp3Map(mp3Files);
@@ -426,7 +517,7 @@
             renderPage();
             updatePaginationButtons();
           } catch (err) {
-            console.error(err);
+            logMessage(`Error selecting xlsx file: ${err.message}`, true);
           }
         });
         ul.appendChild(li);
@@ -434,16 +525,14 @@
       directoryList.appendChild(ul);
     }
 
-    async function fetchFileAndStartGame(fileUrl) {
+    async function fetchFileAndStartGame(fileApiUrl) {
       try {
-        const response = await fetch(fileUrl);
-        if (!response.ok) {
-          throw new Error("Network response was not ok");
-        }
-        const arrayBuffer = await response.arrayBuffer();
-        readExcelBuffer(arrayBuffer);
+        logMessage(`Attempting to fetch XLSX file content via: ${fileApiUrl}`, false);
+        const buffer = await fetchXlsxFileContent(fileApiUrl);
+        readExcelBuffer(buffer);
+        logMessage("File successfully fetched and processed.", false);
       } catch (error) {
-        console.error("Error fetching or processing the file:", error);
+        logMessage(`Error fetching or processing the file: ${error.message}`, true);
         alert("There was an error fetching or processing the file.");
       }
     }
