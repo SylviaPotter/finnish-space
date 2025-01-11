@@ -1,10 +1,9 @@
 ## Welcome to Finnish Space
 
-**Finnish Space** is is your friendly companion for mastering Finnish vocabulary through fun and interactive activities. The site contains two main learning tools:
+**Finnish Space** is is your friendly companion for mastering Finnish vocabulary. The site contains two main learning tools:
 
 1. [Word Matching Game](https://sylviapotter.github.io/finnish-space/word_matching_game.html)
 2. [Spelling Quiz](https://sylviapotter.github.io/finnish-space/finnish_spelling_quiz.html)
-3. [Ebbinghaus Test](https://sylviapotter.github.io/finnish-space/ebbinghaus_test.html)
 
 ---
 
@@ -12,10 +11,10 @@
 
 ### 1. [Word Matching Game](https://sylviapotter.github.io/finnish-space/word_matching_game.html)
 
-The **Word Matching Game** helps you improve your Finnish vocabulary by matching Finnish words with their English translations. You can upload custom word lists or use existing lists and play a game to see how well you can recall the correct pairs.
+The **Word Matching Game** helps you improve your Finnish vocabulary by matching Finnish words with their English translations. **You can also listen to Finnish pronunciation when clicking.** You can upload custom word lists or use existing lists and play a game to see how well you can recall the correct pairs.
 
 #### **How to Use the Word Matching Game**
-1. Click on the "Choose File" button to upload an loacal .xlsx file containing the Finnish and English words. You can also ⭐**Load Files from GitHub Repository**⭐, then select a file from GitHub.
+1. Click on the "Choose File" button to upload an loacal .xlsx file containing the Finnish and English words. You can also ⭐**Choose a WordList**⭐ from different books and chapters.
    - Ensure the local .xlsx file has Finnish words in the first column and English translations in the second column.
 
 2. After selecting a file, click ⭐**Start the Game**⭐.
@@ -32,7 +31,7 @@ The **Word Matching Game** helps you improve your Finnish vocabulary by matching
 The **Spelling Quiz** helps you practice writing Finnish words correctly based on their English meanings. It focuses on reinforcing your recall and active use of Finnish vocabulary.
 
 #### **How to Use the Spelling Quiz**
-1. Click on the "Choose File" button to upload an loacal .xlsx file containing the Finnish and English words. You can also click ⭐**Load Files from GitHub Repository**⭐, then select a file from GitHub.
+1. Click on the "Choose File" button to upload an loacal .xlsx file containing the Finnish and English words. You can also ⭐**Choose a WordList**⭐ from different books and chapters.
    - Ensure the local .xlsx file has Finnish words in the first column and English translations in the second column.
 
 2. Click the ⭐**Start the Quiz**⭐ button to begin.
