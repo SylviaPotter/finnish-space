@@ -244,51 +244,30 @@
             }
         }
 
-        function playAudio(word) {
-    const filePath = audioFilesMap[word.trim()];
-    if (!filePath) {
-        alert(`No audio file found for the word: ${word}`);
-        return;
-    }
-    const audioUrl = `${audioBaseUrl}${filePath}`;
-    console.log('Playing audio from:', audioUrl);
+        function addClickEvents() {
+            let selectedCard = null;
+            document.querySelectorAll('.word-card').forEach(card => {
+                card.addEventListener('click', function() {
+                    if (card.classList.contains('matched') || card === selectedCard) {
+                        return; // Ignore already matched or re-selected cards
+                    }
 
-    const audio = new Audio(audioUrl);
-    audio.play().catch(error => {
-        console.error('Audio playback failed:', error);
-        alert(`Audio playback failed for the word: ${word}`);
-    });
-}
+                    card.classList.add('selected');
 
-function addClickEvents() {
-    let selectedCard = null;
-    document.querySelectorAll('.word-card').forEach(card => {
-        card.addEventListener('click', function () {
-            if (card.classList.contains('matched') || card === selectedCard) {
-                return; // Ignore already matched or re-selected cards
-            }
-
-            // 播放音频（仅针对芬兰语单词）
-            if (card.parentElement.id === 'finnish-column') {
-                playAudio(card.dataset.matchId);
-            }
-
-            card.classList.add('selected');
-
-            if (!selectedCard) {
-                selectedCard = card;
-            } else {
-                if (selectedCard.dataset.matchId === card.dataset.matchId) {
-                    selectedCard.classList.add('matched');
-                    card.classList.add('matched');
-                }
-                selectedCard.classList.remove('selected');
-                card.classList.remove('selected');
-                selectedCard = null;
-            }
-        });
-    });
-}
+                    if (!selectedCard) {
+                        selectedCard = card;
+                    } else {
+                        if (selectedCard.dataset.matchId === card.dataset.matchId) {
+                            selectedCard.classList.add('matched');
+                            card.classList.add('matched');
+                        }
+                        selectedCard.classList.remove('selected');
+                        card.classList.remove('selected');
+                        selectedCard = null;
+                    }
+                });
+            });
+        }
 
         function updatePaginationButtons() {
             document.getElementById('prevButton').disabled = currentPage === 0;
@@ -310,41 +289,6 @@ function addClickEvents() {
                 updatePaginationButtons();
             }
         }
-        
-const audioBaseUrl = 'https://raw.githubusercontent.com/SylviaPotter/finnish-space/main/';
-let audioFilesMap = {};
-
-// 递归获取所有 .mp3 文件
-async function fetchAllMp3Files(path = '') {
-    const url = `${repoBaseUrl}${path}`;
-    try {
-        const response = await fetch(url);
-        if (!response.ok) {
-            throw new Error(`Failed to fetch: ${url}`);
-        }
-        const items = await response.json();
-        for (const item of items) {
-            if (item.type === 'file' && item.name.endsWith('.mp3')) {
-                const fileName = decodeURIComponent(item.name.replace('.mp3', '').trim());
-                audioFilesMap[fileName] = item.path;
-            } else if (item.type === 'dir') {
-                await fetchAllMp3Files(item.path);
-            }
-        }
-    } catch (error) {
-        console.error('Error fetching .mp3 files:', error);
-    }
-}
-
-// 初始化加载所有音频文件
-async function initializeAudioFiles() {
-    await fetchAllMp3Files();
-    console.log('Audio files map:', audioFilesMap);
-}
-
-// 页面加载时初始化音频文件
-initializeAudioFiles();
-
     </script>
 </body>
 </html>
