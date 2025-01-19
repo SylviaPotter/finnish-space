@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <title>Finnish Spelling Quiz</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
@@ -51,18 +51,85 @@
             margin-top: 20px;
             font-size: 1.2em;
         }
+
+        /* 三步选择区域 */
+        #multiStepContainer {
+            border: 2px solid #888;
+            padding: 15px;
+            margin: 20px auto;
+            display: none; /* 默认隐藏 */
+            max-width: 600px;
+            text-align: left;
+            background-color: #ffffff;
+            border-radius: 8px;
+        }
+        #multiStepContainer h2 {
+            margin-top: 0;
+        }
+        #multiStepContainer ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        #multiStepContainer li {
+            padding: 6px 10px;
+            cursor: pointer;
+            margin-bottom: 2px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        #multiStepContainer li:hover {
+            background-color: #f2f2f2;
+        }
+
+        /* API Key & 日志样式 */
+        #apiKeyContainer {
+            margin: 20px 0;
+        }
+        #apiKey {
+            padding: 8px;
+            font-size: 14px;
+            margin-right: 8px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            width: 200px;
+        }
+        #logContainer {
+            max-width: 600px;
+            margin: 20px auto;
+            text-align: left;
+            color: #b00; /* 红色提示 */
+            border: 1px dashed #999;
+            padding: 10px;
+            border-radius: 4px;
+            display: none; /* 默认隐藏 */
+        }
+        .log-toggle-container {
+            margin-top: 20px;
+        }
+        .log-toggle-container button {
+            font-size: 12px;
+            padding: 5px 8px;
+        }
     </style>
 </head>
+
 <body>
     <h1>Finnish Spelling Quiz</h1>
-    <p>Select an Excel (.xlsx) file from your local device or from the available list below.</p>
+    <p>Select an Excel (.xlsx) file from your local device, or use existing wordlists.</p>
+
+    <!-- 新增：API Key 区域 -->
+    <div id="apiKeyContainer">
+        <label for="apiKey">Enter your GitHub API Key:</label>
+        <input type="password" id="apiKey" placeholder="GitHub API Key">
+        <button onclick="setApiKey()">Set API Key</button>
+    </div>
+
     <input type="file" id="fileUpload" accept=".xlsx"><br><br>
-    <button onclick="fetchAllXlsxFiles()">Load Files from GitHub Repository</button>
-    <select id="fileSelect">
-        <option value="">Select a file from GitHub...</option>
-    </select>
+
+    <button onclick="startMultiStepSelection()">Choose a WordList</button>
     <br><br>
     <button onclick="startQuiz()">Start Quiz</button>
+
     <div class="quiz-container" id="quiz-container"></div>
     <div class="pagination" id="pagination">
         <button onclick="prevPage()" id="prevButton" disabled>Previous Page</button>
@@ -71,12 +138,90 @@
     <button onclick="submitAnswers()" id="submitButton" style="display: none;">Submit</button>
     <div id="result"></div>
 
+    <!-- 三步选择容器 -->
+    <div id="multiStepContainer">
+        <h2>WordList Selection</h2>
+        <p id="stepDescription">Step 1: Choose your Book</p>
+        <div id="directoryList"></div>
+    </div>
+
+    <!-- 日志容器 + 按钮 -->
+    <div id="logContainer"></div>
+    <div class="log-toggle-container">
+        <button onclick="toggleLogs()">Show/Hide Logs</button>
+    </div>
+
     <script>
+        // ------------------ (1) API Key & 日志功能 ------------------
+        let apiKey = ""; // 由用户在网页上输入
+        function setApiKey() {
+            const input = document.getElementById("apiKey");
+            apiKey = input.value.trim();
+            if (apiKey) {
+                logMessage("GitHub API Key has been set!", false);
+                alert("API Key has been set!");
+            } else {
+                logMessage("Please enter a valid GitHub API Key.", true);
+            }
+        }
+
+        // 日志记录函数：追加到 #logContainer
+        function logMessage(message, isError = true) {
+            const logContainer = document.getElementById("logContainer");
+            const p = document.createElement("p");
+            p.textContent = (isError ? "Error: " : "") + message;
+            p.style.color = isError ? "red" : "green";
+            logContainer.appendChild(p);
+            console.error(message);
+        }
+
+        // 切换日志显示/隐藏
+        function toggleLogs() {
+            const logContainer = document.getElementById("logContainer");
+            if (logContainer.style.display === "none") {
+                logContainer.style.display = "block";
+            } else {
+                logContainer.style.display = "none";
+            }
+        }
+
+        /**
+         * 带认证信息的 fetch，用于返回 JSON
+         */
+        async function fetchJSONWithAuth(url) {
+            const headers = {
+                Accept: 'application/vnd.github.v3+json',
+            };
+            if (apiKey) {
+                headers['Authorization'] = `token ${apiKey}`;
+            }
+            const response = await fetch(url, { headers });
+            if (!response.ok) {
+                if (response.status === 401) {
+                    throw new Error("Invalid API Key (401). Please check your token.");
+                } else if (response.status === 403) {
+                    throw new Error("Rate limit exceeded or access forbidden (403).");
+                } else {
+                    throw new Error(`Error fetching JSON: ${response.status} ${response.statusText}`);
+                }
+            }
+            return await response.json();
+        }
+
+        // ----------------------------------------------------------
+        // (2) 原有逻辑：Finnish Spelling Quiz
+        // ----------------------------------------------------------
         let words = [];
         let currentPage = 0;
         const itemsPerPage = 5;
 
-        // Event listener for local file upload
+        // 仓库基础信息
+        const repoOwner = "SylviaPotter";
+        const repoName = "finnish-space";
+        const defaultBranch = "main";
+        const repoBaseUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/`;
+
+        // 本地文件上传
         document.getElementById('fileUpload').addEventListener('change', function(event) {
             const file = event.target.files[0];
             if (file) {
@@ -84,90 +229,146 @@
             }
         });
 
-        // Function to fetch all .xlsx files recursively from GitHub repository
-        const repoBaseUrl = 'https://api.github.com/repos/SylviaPotter/finnish-space/contents/';
-        const fileSelect = document.getElementById('fileSelect');
+        // 三步选择： Book → Unit → WordList
+        let currentStep = 1;
+        let selectedBookFolder = "";
+        let selectedUnitFolder = "";
 
-        async function fetchAllXlsxFiles() {
-            fileSelect.innerHTML = '<option value="">Loading files...</option>'; // Show loading message
-            let allXlsxFiles = [];
+        const multiStepContainer = document.getElementById("multiStepContainer");
+        const directoryList = document.getElementById("directoryList");
+        const stepDescription = document.getElementById("stepDescription");
 
-            // Start recursive fetching from the base URL
+        // Choose a WordList
+        async function startMultiStepSelection() {
+            multiStepContainer.style.display = "block";
+            currentStep = 1;
+            selectedBookFolder = "";
+            selectedUnitFolder = "";
+            stepDescription.textContent = "Step 1: Choose your Book";
+
+            await loadDirectories("files");
+        }
+
+        // 递归/或单层 加载文件夹
+        async function loadDirectories(path) {
+            directoryList.innerHTML = "Loading...";
+            const url = `${repoBaseUrl}${path}`;
             try {
-                allXlsxFiles = await fetchXlsxFilesRecursive('');
-                populateFileSelect(allXlsxFiles);
-            } catch (error) {
-                console.error("Error fetching files recursively:", error);
-                alert("There was an error fetching files from the GitHub repository.");
+                logMessage(`Loading directories from: ${url}`, false);
+                const data = await fetchJSONWithAuth(url);
+                logMessage(`Successfully loaded directories from: ${url}`, false);
+
+                const dirs = data.filter(item => item.type === "dir");
+                renderDirectoryList(dirs, path);
+            } catch (err) {
+                logMessage(`Error loading directories from: ${path} - ${err.message}`, true);
+                directoryList.innerHTML = `<p>Error: ${err.message}</p>`;
             }
         }
 
-        // Recursive function to fetch .xlsx files from a given path
-        async function fetchXlsxFilesRecursive(path) {
-            const url = `${repoBaseUrl}${path}`;
+        function renderDirectoryList(dirs, parentPath) {
+            directoryList.innerHTML = "";
+            if (dirs.length === 0) {
+                directoryList.innerHTML = "<p>No subfolders found.</p>";
+                return;
+            }
+
+            const ul = document.createElement("ul");
+            dirs.forEach(dir => {
+                const li = document.createElement("li");
+                li.textContent = dir.name;
+                li.addEventListener("click", () => handleDirectoryClick(dir.name, parentPath));
+                ul.appendChild(li);
+            });
+            directoryList.appendChild(ul);
+        }
+
+        async function handleDirectoryClick(folderName, parentPath) {
+            if (currentStep === 1) {
+                selectedBookFolder = `${parentPath}/${folderName}`;
+                currentStep = 2;
+                stepDescription.textContent = "Step 2: Choose your Unit";
+                await loadDirectories(selectedBookFolder);
+
+            } else if (currentStep === 2) {
+                selectedUnitFolder = `${parentPath}/${folderName}`;
+                currentStep = 3;
+                stepDescription.textContent = "Step 3: Select a WordList";
+                await loadXlsxFilesInUnit(selectedUnitFolder);
+            }
+        }
+
+        // 只在当前文件夹下查找 .xlsx
+        async function loadXlsxFilesInUnit(unitPath) {
+            directoryList.innerHTML = "Loading wordlists...";
+            const url = `${repoBaseUrl}${unitPath}`;
             try {
-                const response = await fetch(url);
+                logMessage(`Loading xlsx files from: ${url}`, false);
+                const data = await fetchJSONWithAuth(url);
+                logMessage(`Successfully loaded xlsx info from: ${url}`, false);
+
+                const xlsxFiles = data.filter(item => item.type === "file" && item.name.endsWith(".xlsx"));
+                if (xlsxFiles.length === 0) {
+                    directoryList.innerHTML = "<p>No .xlsx files found in this folder.</p>";
+                    return;
+                }
+                renderXlsxFileList(xlsxFiles);
+            } catch (err) {
+                logMessage(`Error loading xlsx from: ${unitPath} - ${err.message}`, true);
+                directoryList.innerHTML = `<p>Error: ${err.message}</p>`;
+            }
+        }
+
+        // 手动拼接 Raw URL
+        function buildRawUrl(filePath) {
+            return `https://raw.githubusercontent.com/${repoOwner}/${repoName}/${defaultBranch}/${filePath}`;
+        }
+
+        function renderXlsxFileList(xlsxFiles) {
+            directoryList.innerHTML = "";
+            const ul = document.createElement("ul");
+
+            xlsxFiles.forEach(file => {
+                const li = document.createElement("li");
+                li.textContent = file.name;
+                li.addEventListener("click", async () => {
+                    multiStepContainer.style.display = "none";
+
+                    try {
+                        const rawUrl = buildRawUrl(file.path);
+                        logMessage(`Fetching xlsx from raw URL: ${rawUrl}`, false);
+
+                        await fetchXlsxFileFromUrl(rawUrl);
+
+                        currentPage = 0;
+                        renderPage();
+                        updatePaginationButtons();
+                    } catch (err) {
+                        logMessage(`Error selecting xlsx file: ${err.message}`, true);
+                    }
+                });
+                ul.appendChild(li);
+            });
+            directoryList.appendChild(ul);
+        }
+
+        async function fetchXlsxFileFromUrl(fileUrl) {
+            try {
+                logMessage(`Fetching xlsx ArrayBuffer from: ${fileUrl}`, false);
+                const response = await fetch(fileUrl);
                 if (!response.ok) {
                     throw new Error("Network response was not ok");
                 }
-                const items = await response.json();
-                let xlsxFiles = [];
-
-                for (const item of items) {
-                    if (item.type === 'file' && item.name.endsWith('.xlsx')) {
-                        // If the item is a .xlsx file, add it to the list
-                        xlsxFiles.push(item);
-                    } else if (item.type === 'dir') {
-                        // If the item is a directory, fetch its contents recursively
-                        const subDirFiles = await fetchXlsxFilesRecursive(item.path);
-                        xlsxFiles = xlsxFiles.concat(subDirFiles);
-                    }
-                }
-
-                return xlsxFiles;
+                const arrayBuffer = await response.arrayBuffer();
+                readExcelBuffer(arrayBuffer);
+                logMessage("File successfully fetched and processed.", false);
             } catch (error) {
-                console.error(`Error fetching content from ${url}:`, error);
-                return [];
+                logMessage(`Error fetching or processing the file: ${error.message}`, true);
+                alert("There was an error fetching or processing the file.");
             }
         }
 
-        // Populate the select dropdown with the fetched .xlsx files
-        function populateFileSelect(files) {
-            fileSelect.innerHTML = '<option value="">Select a file from GitHub...</option>';
-            files.forEach(file => {
-                const option = document.createElement('option');
-                option.value = file.download_url;
-                option.textContent = file.path; // Use file path to provide context of where the file is located
-                fileSelect.appendChild(option);
-            });
-        }
-
-        // Function to start the quiz by loading the selected file
-        async function startQuiz() {
-            const fileUrl = document.getElementById('fileSelect').value;
-
-            if (fileUrl) {
-                try {
-                    const response = await fetch(fileUrl);
-                    if (!response.ok) {
-                        throw new Error("Network response was not ok");
-                    }
-
-                    const arrayBuffer = await response.arrayBuffer();
-                    readExcelBuffer(arrayBuffer);
-                } catch (error) {
-                    console.error("Error fetching or processing the file:", error);
-                    alert("There was an error fetching or processing the file.");
-                }
-            } else if (words.length === 0) {
-                alert("Please upload a valid file or select one from GitHub first.");
-            } else {
-                renderPage();
-                updatePaginationButtons();
-            }
-        }
-
-        // Function to read Excel file from local upload
+        // 本地文件
         function readExcelFile(file) {
             const reader = new FileReader();
             reader.onload = function(e) {
@@ -177,7 +378,6 @@
             reader.readAsArrayBuffer(file);
         }
 
-        // Function to read Excel file buffer from GitHub or local upload
         function readExcelBuffer(buffer) {
             const workbook = XLSX.read(buffer, { type: 'array' });
             const firstSheetName = workbook.SheetNames[0];
@@ -189,20 +389,24 @@
                 if (finnish && english) {
                     return { finnish: finnish.trim(), english: english.trim(), userAnswer: "" };
                 }
-            }).filter(pair => pair); // Filter out any invalid entries
+            }).filter(pair => pair);
 
             words = shuffle(words);
-            currentPage = 0;
+        }
+
+        async function startQuiz() {
+            if (words.length === 0) {
+                alert("Please upload a valid file or pick a WordList first.");
+                return;
+            }
             renderPage();
             updatePaginationButtons();
         }
 
-        // Shuffle function to randomize words
         function shuffle(array) {
             return array.sort(() => Math.random() - 0.5);
         }
 
-        // Render page with current words
         function renderPage() {
             const quizContainer = document.getElementById('quiz-container');
             quizContainer.innerHTML = '';
@@ -211,41 +415,26 @@
             const end = Math.min(start + itemsPerPage, words.length);
             let pageWords = words.slice(start, end);
 
-            // For each word pair, create input fields for the user to type Finnish translation
             pageWords.forEach((pair, index) => {
                 const wordRow = document.createElement('div');
                 wordRow.classList.add('word-row');
 
-                // English word display
                 const englishDiv = document.createElement('div');
                 englishDiv.classList.add('english-word');
                 englishDiv.textContent = pair.english;
 
-                // Input box for Finnish word
                 const inputBox = document.createElement('input');
                 inputBox.classList.add('input-box');
                 inputBox.dataset.index = start + index;
                 inputBox.value = pair.userAnswer;
 
-                // Append elements to the word row
                 wordRow.appendChild(englishDiv);
                 wordRow.appendChild(inputBox);
-
-                // Append the word row to the quiz container
                 quizContainer.appendChild(wordRow);
             });
-
             updatePaginationButtons();
         }
 
-        // Update pagination buttons based on current page
-        function updatePaginationButtons() {
-            document.getElementById('prevButton').disabled = currentPage === 0;
-            document.getElementById('nextButton').disabled = (currentPage + 1) * itemsPerPage >= words.length;
-            document.getElementById('submitButton').style.display = (currentPage + 1) * itemsPerPage >= words.length ? 'block' : 'none';
-        }
-
-        // Save user answers for the current page
         function saveUserAnswers() {
             const inputs = document.querySelectorAll('.input-box');
             inputs.forEach(input => {
@@ -254,40 +443,42 @@
             });
         }
 
-        // Function to navigate to the next page
+        function updatePaginationButtons() {
+            document.getElementById('prevButton').disabled = currentPage === 0;
+            document.getElementById('nextButton').disabled = (currentPage + 1) * itemsPerPage >= words.length;
+            document.getElementById('submitButton').style.display =
+                ((currentPage + 1) * itemsPerPage >= words.length) ? 'block' : 'none';
+        }
+
         function nextPage() {
             if ((currentPage + 1) * itemsPerPage < words.length) {
-                saveUserAnswers(); // Save user inputs
+                saveUserAnswers();
                 currentPage++;
                 renderPage();
                 updatePaginationButtons();
             }
         }
 
-        // Function to navigate to the previous page
         function prevPage() {
             if (currentPage > 0) {
-                saveUserAnswers(); // Save user inputs
+                saveUserAnswers();
                 currentPage--;
                 renderPage();
                 updatePaginationButtons();
             }
         }
 
-        // Handle submit button click to evaluate answers
         function submitAnswers() {
             saveUserAnswers();
 
             const resultDiv = document.getElementById('result');
-            resultDiv.innerHTML = ''; // Clear previous results
+            resultDiv.innerHTML = '';
 
             let correctCount = 0;
 
-            // Create table to display results
             const resultTable = document.createElement('table');
             resultTable.id = 'result-table';
 
-            // Add table headers
             const headerRow = document.createElement('tr');
             headerRow.innerHTML = `
                 <th>English</th>
@@ -297,12 +488,10 @@
             `;
             resultTable.appendChild(headerRow);
 
-            // Fill in the table rows with answers and results
             words.forEach(pair => {
                 const userAnswer = pair.userAnswer.toLowerCase();
                 const correctAnswer = pair.finnish.toLowerCase();
 
-                // Create a row for each word pair
                 const resultRow = document.createElement('tr');
                 resultRow.innerHTML = `
                     <td>${pair.english}</td>
@@ -310,18 +499,12 @@
                     <td>${pair.userAnswer}</td>
                     <td>${userAnswer === correctAnswer ? '✔️' : '❌'}</td>
                 `;
-
-                // Count correct answers
-                if (userAnswer === correctAnswer) {
-                    correctCount++;
-                }
-
+                if (userAnswer === correctAnswer) correctCount++;
                 resultTable.appendChild(resultRow);
             });
 
             resultDiv.appendChild(resultTable);
 
-            // Calculate accuracy
             const total = words.length;
             const accuracy = ((correctCount / total) * 100).toFixed(2);
             const accuracyResult = document.createElement('div');
