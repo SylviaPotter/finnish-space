@@ -1,0 +1,1411 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Finnish Space Pro — SM1 & SM2 词汇与语法变形自由练习台</title>
+<style>
+  :root {
+    --bg: #f4f7fb;
+    --card: #ffffff;
+    --primary: #0052cc;
+    --primary-light: #e6f0ff;
+    --success: #16a34a;
+    --success-bg: #dcfce7;
+    --error: #dc2626;
+    --error-bg: #fee2e2;
+    --text: #1e293b;
+    --muted: #64748b;
+    --border: #e2e8f0;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    padding-bottom: 50px;
+  }
+  header {
+    background: #0f172a;
+    color: #fff;
+    padding: 16px 24px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+  }
+  .brand { font-size: 1.2rem; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+  .brand span { background: #3b82f6; padding: 2px 8px; border-radius: 6px; font-size: 0.8rem; }
+  .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  select, button {
+    font-size: 0.92rem;
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: #fff;
+    color: var(--text);
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.15s;
+  }
+  select { min-width: 240px; }
+  button:hover { filter: brightness(0.95); }
+  .btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+  .btn-outline { background: transparent; color: #fff; border-color: #475569; }
+  .btn-outline:hover { background: #1e293b; }
+
+  .container { max-width: 980px; margin: 20px auto; padding: 0 16px; }
+  .tabs {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+  .tab-btn {
+    padding: 12px 10px;
+    border-radius: 10px;
+    background: var(--card);
+    border: 2px solid var(--border);
+    font-weight: 600;
+    text-align: center;
+    color: var(--muted);
+  }
+  .tab-btn.active {
+    border-color: var(--primary);
+    background: var(--primary-light);
+    color: var(--primary);
+  }
+
+  .panel {
+    background: var(--card);
+    border-radius: 14px;
+    padding: 24px;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05);
+    border: 1px solid var(--border);
+  }
+  .status-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding-bottom: 16px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+
+  /* Mode 1: Matching */
+  .match-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .match-col { display: flex; flex-direction: column; gap: 10px; }
+  .match-col-title { font-weight: 700; font-size: 0.85rem; color: var(--muted); text-transform: uppercase; margin-bottom: 4px; }
+  .match-card {
+    padding: 14px 16px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    background: #fff;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 58px;
+    transition: all 0.15s;
+    user-select: none;
+  }
+  .match-card:hover { border-color: #94a3b8; background: #f8fafc; }
+  .match-card.selected { border-color: var(--primary); background: var(--primary-light); color: var(--primary); font-weight: 700; }
+  .match-card.matched { border-color: var(--success); background: var(--success-bg); color: var(--success); opacity: 0.45; pointer-events: none; }
+  .match-card.wrong { border-color: var(--error); background: var(--error-bg); color: var(--error); animation: shake 0.3s; }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+  }
+
+  /* Prompt & Inputs */
+  .prompt-box {
+    text-align: center;
+    padding: 22px 16px;
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    margin-bottom: 20px;
+  }
+  .prompt-tag {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 99px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    background: #e2e8f0;
+    color: #334155;
+    margin-bottom: 8px;
+  }
+  .prompt-main { font-size: 1.5rem; font-weight: 700; color: #0f172a; margin-bottom: 6px; }
+  .prompt-sub { font-size: 0.95rem; color: var(--muted); }
+
+  .input-row {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-width: 640px;
+    margin: 0 auto;
+  }
+  .field-group { display: flex; flex-direction: column; gap: 5px; }
+  .field-label { font-size: 0.88rem; font-weight: 600; color: #334155; display: flex; justify-content: space-between; }
+  .text-input {
+    width: 100%;
+    padding: 12px 14px;
+    font-size: 1.08rem;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    outline: none;
+    transition: border 0.15s;
+  }
+  .text-input:focus { border-color: var(--primary); }
+  .text-input.ok { border-color: var(--success); background: var(--success-bg); }
+  .text-input.err { border-color: var(--error); background: var(--error-bg); }
+
+  .char-bar {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin: 12px 0;
+  }
+  .char-btn {
+    padding: 6px 16px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+  }
+  .char-btn:hover { background: #e2e8f0; }
+
+  .action-bar {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 18px;
+    flex-wrap: wrap;
+  }
+  .feedback-box {
+    max-width: 640px;
+    margin: 18px auto 0;
+    padding: 16px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: #f8fafc;
+    display: none;
+  }
+  .feedback-box.show { display: block; }
+  .check-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 10px 14px;
+    background: #f1f5f9;
+    border-radius: 10px;
+    margin-bottom: 16px;
+    font-size: 0.88rem;
+  }
+  .check-filters label { display: flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 600; }
+
+  /* Table modal */
+  table { width: 100%; border-collapse: collapse; font-size: 0.88rem; margin-top: 12px; }
+  th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; }
+  th { background: #f1f5f9; font-weight: 700; }
+  .tts-mini { padding: 3px 8px; font-size: 0.8rem; margin-left: 6px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    🇫🇮 Finnish Space Pro <span>SM2 K5 & K6 全词库 (339词)</span>
+  </div>
+  <div class="controls">
+    <select id="catSelect" onchange="onCategoryChange()"></select>
+    <button class="btn-outline" onclick="speakText('Tervetuloa opiskelemaan suomea!')">🔊 测试芬兰语发音</button>
+    <button class="btn-outline" onclick="toggleImportModal()">📥 导入新章节词表</button>
+  </div>
+</header>
+
+<div class="container">
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchMode('match')" id="tab-match">1. 单词配对 (TTS)</button>
+    <button class="tab-btn" onclick="switchMode('spell')" id="tab-spell">2. 看英拼芬 (默写)</button>
+    <button class="tab-btn" onclick="switchMode('nominal')" id="tab-nominal">3. 部分格与属格</button>
+    <button class="tab-btn" onclick="switchMode('verb')" id="tab-verb">4. 动词类型与分词</button>
+    <button class="tab-btn" onclick="switchMode('rektio')" id="tab-rektio">5. 支配格与句型</button>
+    <button class="tab-btn" onclick="switchMode('list')" id="tab-list">📚 本节词表总览</button>
+  </div>
+
+  <div class="panel" id="mainPanel"></div>
+</div>
+
+<!-- 导入弹窗 -->
+<div id="importModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:200; align-items:center; justify-content:center; padding:16px;">
+  <div style="background:#fff; max-width:620px; width:100%; border-radius:14px; padding:24px;">
+    <h3 style="margin-bottom:8px;">📥 批量追加新章节词表（支持从 Excel 直接复制粘贴）</h3>
+    <p style="font-size:0.86rem; color:#64748b; margin-bottom:12px;">
+      直接从你的 Excel 中选中三列（<b>Finnish | English | Category</b>）复制粘贴到下方文本框，点击“立即导入”，系统会自动为你切分小节并计算部分格、属格和动词分词！
+    </p>
+    <textarea id="tsvInput" rows="8" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px; font-family:monospace; font-size:0.85rem;" placeholder="格式示例（Tab分隔）：&#10;uusi	new	SM1 Kappale 3&#10;lukea (1)	to read	SM1 Kappale 3"></textarea>
+    <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:14px;">
+      <button onclick="toggleImportModal()">关闭</button>
+      <button class="btn-primary" onclick="importTSV()">立即导入</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==================== 1. 原始 11 个小节 & 339 个词条（零遗漏） ====================
+const CATEGORIES = [
+  "Kappale 5 Varkaus Puistotiellä",
+  "Pikkusanat",
+  "Asiointi",
+  "Asiointi (kortit ja luvat)",
+  "Asiointi (virastot)",
+  "Puhutaan! Kotivakuutus",
+  "Kappale 6 Onnea hääparille!",
+  "Parisuhde",
+  "Suomalainen juhlakalenteri",
+  "Juhlat",
+  "Puhutaan! Hauska juttu"
+];
+
+const RAW_ROWS = [
+  [0,"varkaus","theft"],[0,"eräs","some"],[0,"samaan aikaan","at the same time, on the same date"],[0,"jäädä (2) + maan/mään","to stay and (do) something"],[0,"yhtäkkiä","suddenly"],[0,"keskeyttää (1)","to interrupt"],[0,"toi - tuo","that/they/he/she/it"],[0,"Ihme juttu!","Weird thing!"],[0,"-han/hän","clitic suffix: emphasis / softening ('you know', 'after all')"],[0,"lukko","lock"],
+  [0,"rikki","broken"],[0,"sisällä","in, inside"],[0,"sotku","mess"],[0,"moni","many"],[0,"kellarikomero","cellar storage"],[0,"sikin sokin","at sixes and sevens"],[0,"joku","someone"],[0,"murtautua (1) + MIHIN","to break in (1) + WHERE"],[0,"Niin onkin!","Yes it is!"],[0,"selvitä (4)","to survive (4)"],
+  [0,"ehkä","perhaps"],[0,"yllättää (1)","to surprise (1)"],[0,"varas","thief"],[0,"G + kautta","G + via"],[0,"Voi olla!","Could be!"],[0,"viedä (2) varastaa (1)","to steal"],[0,"hävitä (4)","to lose (4)"],[0,"jokin","something"],[0,"lojua (1) + MISSÄ","to lay about + WHERE"],[0,"huomata (4)","to notice (4)"],
+  [0,"teltta","tent"],[0,"kahvikuppi","coffee cup"],[0,"murtovaras","a burglar"],[0,"rikkoa (1)","to break (1)"],[0,"kadota (4)","to disappear (4)"],[0,"ompelukone","sewing machine"],[0,"kulunut","worn"],[0,"talvirengas","winter tyre"],[0,"sen sijaan","in its place"],[0,"kelvata (4) + lle","be good for (4)"],
+  [0,"Voi hitto!","Oh damn!"],[0,"just = juuri","just"],[0,"ettei = että ei","that... not"],[0,"kannattaa (1)","something to be worth"],[0,"säilyttää (1)","to keep, to store, to preserve"],[0,"arvokas","valuable"],[0,"ennen kuin","before"],[0,"Teillä kävi huono tuuri.. = Teillä oli huono onni.","You had bad luck."],[0,"kilpapyörä","racing bike"],[0,"ajoitus","timing"],
+  [0,"kotivakuutus","home insurance"],[0,"olla hyötyä + sta/stä","to be benefit from"],[0,"vakuutusmaksu turhaan","insurance payment in vain, for nothing"],[0,"poliisiasema","police station"],[0,"selvittää (1)","to sort out, to clear up, to clarify"],[0,"tehdä (2) rikosilmoitus","to report a crime"],[0,"ilmoittaa (1)","to announce, to notify"],[0,"kertoa (1)","to tell"],[0,"tekijä","culprit"],[0,"jäädä (2) kiinni","to get caught"],
+  [0,"harvoin","rarely"],[0,"neuvoa (1) + P + maan/mään","to advice to"],[0,"tehdä (2) korvaushakemus","to make a claim for compensation"],[0,"päätös","decision"],[0,"vakuutusyhtiö","insurance company"],[0,"vasta","only"],[0,"G + päästä","G + in"],[0,"korvaus","compensation"],[0,"omavastuu","deductible"],[0,"itse","self"],
+  [1,"samaan aikaan","at the same time, on the same date"],[1,"yhtäkkiä","suddenly"],[1,"-han/hän","clitic suffix: emphasis / softening ('you know', 'after all')"],[1,"sikin sokin","at sixes and sevens"],[1,"ehkä","perhaps"],[1,"G + kautta","G + via"],[1,"sen sijaan","in its place"],[1,"just = juuri","just"],[1,"ennen kuin","before"],[1,"onneksi","luckily, thankfully"],
+  [1,"turhaan","in vain, for nothing"],[2,"asiakirjat","documents"],[2,"lomake","form"],[2,"täyttää (1) lomake","to fill out a form"],[2,"palauttaa (1) lomake","to return a form"],[2,"ilmoitus","notice"],[2,"veroilmoitus","tax return"],[2,"muuttoilmoitus","change of address"],[2,"hakemus","application"],[2,"valitus","complaint"],
+  [2,"todistus","certificate"],[2,"liite","appendix"],[2,"(sähköinen) allekirjoitus","(electronic) signature"],[2,"päiväys","date"],[2,"viimeistään 23.1. = 23.1. mennessä","By 23 January"],[2,"viimeistään perjantaina = perjantaihin mennessä","By Friday"],[2,"asiakaspalvelu","customer service"],[2,"toimipiste","location"],[2,"neuvonta","information desk"],[2,"virkailija","clerk"],
+  [2,"palvelupiste = tiski","customer service location/desk"],[2,"jono","queue, line"],[2,"jonottaa (1) = olla jonossa","to queue, to wait in a queue/line"],[2,"vuoro","shift"],[2,"vuoronumero","queueing number"],[2,"maksut","payments"],[2,"maksu","payment"],[2,"lasku","invoice"],[2,"eräpäivä","due date"],[2,"maksaa (1) lasku","to pay an invoice"],
+  [2,"kuitti","receipt"],[2,"vakuutus","insurance"],[2,"korvaus","compensation"],[2,"hakea (1) korvausta","to apply for compensating youth."],[2,"korvata (4)","to compensate, to replace"],[2,"tunnistautua (1) pankkitunnuksilla","to identify yourself with bank credentials"],[3,"henkilöllisyystodistus = henkkari","identity card"],[3,"passi","passport"],[3,"henkilökortti","ID card"],[3,"Kela-kortti","Kela card"],
+  [3,"ajokortti","driver's license"],[3,"TE-toimisto = työkkäri","employment office"],[3,"työlupa","work permit"],[3,"oleskelulupa","residence permit"],[4,"Digi- ja väestötietovirasto","Digital and Population Data Services Agency"],[4,"maahanmuuttovirasto = migri","Immigration office, Finnish Immigration Service"],[4,"verotoimisto","tax office"],[4,"KELA = Kansaneläkelaitos","KELA, The Social Insurance Institution"],[4,"poliisiasema","police station"],[4,"vakuutusyhtiö","insurance company"],
+  [5,"hoitaa (1)","to take care (1)"],[5,"asia","topic"],[5,"nykyinen","current"],[5,"näyttää (1)","to show"],[5,"henkilöllisyystodistus","identification"],[5,"käydä (2) sopia (1)","to arrange"],[5,"henkilökortti","ID card"],[5,"kaksio","one bedroom apartment"],[5,"neliö = neliömetri","square metre"],[5,"vaihtoehto","alternative"],
+  [5,"suppea","narrow"],[5,"perus","basic"],[5,"laaja","extensive"],[5,"turva","safety"],[5,"edullinen","affordable"],[5,"korvata (4)","to compensate, to replace"],[5,"kattaa (1)","to cover"],[5,"vuokranantaja","landlord"],[5,"vaatia (1)","to demand"],[5,"irtaimisto","personal property"],
+  [5,"irtaimistovahinko","damage to personal property"],[5,"eli","so"],[5,"laitteet","devices"],[5,"vakuuttaa (1)","to insure"],[5,"laittaa (1)","to do something"],[5,"alennus","discount"],[5,"täyttää (1) lomake","to fill out a form"],[5,"verkko","Internet, web"],[5,"palvelu","service"],[5,"tunnistautua (1) + MIHIN","to identify yourself (1) + WHERE"],
+  [5,"pankkitunnukset","bank credentials"],[5,"kiitos + sta/stä","thank you for"],[5,"neuvo","advice"],[5,"Eipä mitään. = Ei kestä","You're welcome / No problem"],[5,"esite","brochure"],[6,"hääpari","wedding couple"],[6,"osallistua (1) + MIHIN","to participate (1) + WHERE"],[6,"kierros","a round"],[6,"opas","guide"],[6,"seurustella (3)","to date"],
+  [6,"G + luokse","G+ to someone"],[6,"mennä (3) kihloihin","to get engaged"],[6,"uusivuosi","New Year"],[6,"suunnitella (3)","to plan (3)"],[6,"kauan","for long"],[6,"kesken + G","in the middle of + G"],[6,"ilotulitus","fireworks"],[6,"lopulta","finally"],[6,"mennä (3) naimisiin","to get married"],[6,"jännittää (1)","to get excited (1)"],
+  [6,"turhaan","in vain, for nothing"],[6,"suostua (1)","to agree (1)"],[6,"häät","wedding"],[6,"ensimmäiseksi","first"],[6,"päättää (1)","to decide (1)"],[6,"viimeinen","last"],[6,"vuokrata (4) + MISTÄ","to rent + WHERE"],[6,"pyytää (1) + P + ksi","to ask for something"],[6,"kaaso","maid/matron of honour"],[6,"tulla (3) + ksi","to become (3) something"],
+  [6,"bestman","bestman"],[6,"kutsu","invitation"],[6,"lähettää (1)","send (1)"],[6,"sukulainen","relative"],[6,"kutsua (1)","to invite"],[6,"järjestää (1)","organise"],[6,"polttarit","bachelor/bachelorette party"],[6,"vihdoin","finally"],[6,"täynnä","full"],[6,"pappi","priest"],
+  [6,"rakkaus","love"],[6,"ystävyys","friendship"],[6,"lapsuus","childhood"],[6,"viulu","violin"],[6,"näyttää (1) + lta/ltä","to look + something"],[6,"upea","beautiful"],[6,"ommella (3)","to sew"],[6,"hääpuku","wedding dress/suit"],[6,"siirtyä (1)","to move"],[6,"koristella (3)","to decorate"],
+  [6,"onnitella (3) + P","congratulations + P"],[6,"ruokailu","eating"],[6,"kaikkien mielestä","according to everyone"],[6,"pitää (1) puhe","to give a speech"],[6,"tulkata (4)","to interpret (4)"],[6,"valmistella (3)","to prepare (3)"],[6,"yhteinen","common"],[6,"lisäksi","additionally, in addition"],[6,"ohjelma","programme"],[6,"häävalssi","wedding waltz"],
+  [6,"etenkin","especially"],[6,"pitkästä aikaa","after a long time"],[6,"ei + kahteen vuoteen","no + for two years"],[6,"olla ikävä + P","to miss + P"],[6,"kova","hard"],[6,"erityisesti","especially"],[6,"tuntua (1) + lta/ltä","to feel (1) + something"],[6,"huomata (4)","to notice (4)"],[6,"tulla (3) toimeen + G + kanssa","to get along (3) with + G"],[6,"ilo","joy"],
+  [6,"yhdistää (1)","to connect (1)"],[7,"poikaystävä","boyfriend"],[7,"tyttöystävä","girlfriend"],[7,"miesystävä","partner"],[7,"naisystävä","partner"],[7,"kumppani","partner"],[7,"ihastua (1)","to get a crush"],[7,"rakastua (1)","to fall in love"],[7,"olla ihastunut","to have a crush"],[7,"olla rakastunut","to be in love"],
+  [7,"seurustella (3) + G + kanssa","to date + G + someone"],[7,"ero","difference"],[7,"olla eronnut","to be divorced/ separated/broken up"],[7,"erota (4) + sta/stä","to break up with, to separate from, to divorce (4) someone"],[7,"avoliitto","nonmarital relationship, common-law marriage"],[7,"avomies","common-law husband, spouse"],[7,"avovaimo","common-law wife, spouse"],[7,"avopuoliso","common-law spouse"],[7,"asua (1) yhdessä","to live together"],[7,"kihlaus","engagement"],
+  [7,"olla kihloissa + G + kanssa","to be engaged to someone"],[7,"avioliitto","marriage"],[7,"(avio)mies","husband"],[7,"(avio)vaimo","wife"],[7,"(avio)puoliso","spouse"],[7,"olla naimisissa + G + kanssa","to be married to someone"],[7,"rekisteröity parisuhde","registered relationship"],[8,"uusivuosi","New Year"],[8,"ystävänpäivä","Valentine's Day"],[8,"laskiainen","Shrove Tuesday"],
+  [8,"pääsiäinen","Easter"],[8,"vappu","May Day / Labour Day"],[8,"juhannus","Midsummer"],[8,"itsenäisyyspäivä","Independence Day"],[8,"pikkujoulut","Christmas party"],[8,"jouluaatto","Christmas Eve"],[9,"ristiäiset/nimiäiset","christening/naming"],[9,"kummitäti","godmother"],[9,"kummisetä","godfather"],[9,"kummi","godparent"],
+  [9,"rippijuhlat","confirmation party"],[9,"konfirmaatio","confirmation"],[9,"ylioppilasjuhlat","graduation party"],[9,"ylioppilaslakki","graduation cap"],[9,"valmistujaiset","graduation"],[9,"kihlajaiset","engagement party"],[9,"kihlasormus","engagement ring"],[9,"mennä (3) kihloihin + G + kanssa","to get engaged to someone"],[9,"häät","wedding"],[9,"kosia (1) + P","to propose + P"],
+  [9,"polttarit","bachelor/bachelorette party"],[9,"vihkisormus","wedding ring"],[9,"mennä (3) naimisiin + G + kanssa","to get married to someone"],[9,"kirkko/maistraatti","church/magistrate"],[9,"vihkiä (1)","to wed"],[9,"hautajaiset","funeral"],[9,"syntymäpäivät, synttärit","birthday party"],[9,"tupaantuliaiset, tuparit","housewarming party"],[9,"läksiäiset","going away party"],[9,"viettää (1) + P","to spend time, to have something (an event) + P"],
+  [9,"Vietämme pääsiäistä kotona.","We will spend Easter at home."],[9,"juhlia (1) + P","to celebrate + P"],[9,"Juhlimme Liisan syntymäpäivää mökillä.","We will celebrate Liisa's birthday at the cottage."],[9,"täyttää (1)","to fill"],[9,"Liisa täyttää 40 vuotta kesäkuussa.","Liisa turns 40 in June."],[10,"juttu","thing"],[10,"keittää (1)","to cook"],[10,"bändi","band"],[10,"aivan","just, so"],[10,"mahtava","awesome"],
+  [10,"Mikä se nyt olikaan?","What was it again?"],[10,"mieletön","mad"],[10,"meininki = tunnelma","atmosphere, ambience vibes"],[10,"koko","size"],[10,"jopa","even"],[10,"biisi = laulu","song"],[10,"Jep!","Yeah!"],[10,"mut = mutta","but"],[10,"selvitä (4) + lle","to be made clear"],[10,"paholainen","devil"],
+  [10,"bestman","bestman"],[10,"ei ihan","not quite"],[10,"naurattaa (1) + P","to make someone laugh + P"],[10,"kovasti","very much"],[10,"muutama","few, a few"],[10,"vasta","only"],[10,"tuparit = tupaantuliaiset","housewarming party"],[10,"kaataa (1)","to pour (1)"],[10,"vahingossa","accidentally, by accident"],[10,"Eikä?!","No way?!"],
+  [10,"yhtäkkiä","suddenly"],[10,"hiljentyä (1)","to settle down, to quiet down"],[10,"aluksi","at first"],[10,"tajuta (4)","to realise"],[10,"yrittää (1)","to try"],[10,"olla pahoillaan","to be sorry"],[10,"tapahtua (1)","to happen"],[10,"selittää (1)","to explain"],[10,"tarkoittaa (1)","to mean"],[10,"itse","self"],
+  [10,"ruveta (4) + maan/mään","to do something"],[10,"sit = sitten","then"],[10,"vieläkin","still"],[10,"välillä","occasionally, betweentimes"],[10,"vitsillä","as a joke"],[10,"ne pyytää = he pyytävät","they are asking"],[10,"pyytää (1) anteeksi","to apologise"],[10,"taitaa (1)","may be"],[10,"lisää","addition"]
+];
+
+// ==================== 2. 名词/形容词/代词 变格引擎与特殊词典 ====================
+const ADVERBS_AND_PHRASES = new Set([
+  "samaan aikaan","yhtäkkiä","toi - tuo","Ihme juttu!","-han/hän","rikki","sisällä","sikin sokin","Niin onkin!","ehkä","G + kautta","Voi olla!","sen sijaan","Voi hitto!","just = juuri","ettei = että ei","ennen kuin","Teillä kävi huono tuuri.. = Teillä oli huono onni.","olla hyötyä + sta/stä","vakuutusmaksu turhaan","harvoin","vasta","G + päästä","onneksi","turhaan","viimeistään 23.1. = 23.1. mennessä","viimeistään perjantaina = perjantaihin mennessä","eli","kiitos + sta/stä","Eipä mitään. = Ei kestä","G + luokse","kauan","kesken + G","lopulta","ensimmäiseksi","vihdoin","täynnä","kaikkien mielestä","lisäksi","etenkin","pitkästä aikaa","ei + kahteen vuoteen","olla ikävä + P","erityisesti","olla ihastunut","olla rakastunut","olla eronnut","olla kihloissa + G + kanssa","olla naimisissa + G + kanssa","Vietämme pääsiäistä kotona.","Juhlimme Liisan syntymäpäivää mökillä.","Liisa täyttää 40 vuotta kesäkuussa.","aivan","Mikä se nyt olikaan?","jopa","Jep!","mut = mutta","ei ihan","kovasti","vahingossa","Eikä?!","aluksi","olla pahoillaan","sit = sitten","vieläkin","välillä","vitsillä","ne pyytää = he pyytävät","lisää","perus"
+]);
+
+const NOM_OVERRIDES = {
+  "(avio)mies": ["(avio)miestä | miestä", "(avio)miehen | miehen", "(avio)miehiä | miehiä", "不规则名词 mies：单数部分格 miestä，单数属格 miehen，复数部分格 miehiä"],
+  "(avio)puoliso": ["(avio)puolisoa | puolisoa", "(avio)puolison | puolison", "(avio)puolisoita | puolisoita", "-o 词：部分格 puolisoa，属格 puolison"],
+  "(avio)vaimo": ["(avio)vaimoa | vaimoa", "(avio)vaimon | vaimon", "(avio)vaimoja | vaimoja", "-o 词：部分格 vaimoa，属格 vaimon"],
+  "(sähköinen) allekirjoitus": ["(sähköistä) allekirjoitusta | allekirjoitusta", "(sähköisen) allekirjoituksen | allekirjoituksen", "(sähköisiä) allekirjoituksia | allekirjoituksia", "-inen 形容词 + -us 名词同格一致：sähköistä allekirjoitusta / sähköisen allekirjoituksen"],
+  "Digi- ja väestötietovirasto": ["Digi- ja väestötietovirastoa", "Digi- ja väestötietoviraston", "Digi- ja väestötietovirastoja", "复合词变末尾 virasto：部分格 -oa，属格 -on"],
+  "KELA = Kansaneläkelaitos": ["Kelaa | Kansaneläkelaitosta", "Kelan | Kansaneläkelaitoksen", "Keloja | Kansaneläkelaitoksia", "Kela → Kelaa/Kelan；laitos (-os) → laitosta/laitoksen"],
+  "Kela-kortti": ["Kela-korttia", "Kela-kortin", "Kela-kortteja", "新 -i 词 (tt → t)：部分格 Kela-korttia，属格弱化为 Kela-kortin"],
+  "TE-toimisto = työkkäri": ["TE-toimistoa | työkkäriä", "TE-toimiston | työkkärin", "TE-toimistoja | työkkäreitä", "toimistoa/toimiston；口语 työkkäriä/työkkärin"],
+  "ajokortti": ["ajokorttia", "ajokortin", "ajokortteja", "新 -i 词 (tt → t)：部分格 ajokorttia，属格弱化为 ajokortin"],
+  "arvokas": ["arvokasta", "arvokkaan", "arvokkaita", "-as 形容词 (逆向强级 k → kk！)：单数部分格单 k (arvokasta)，属格双 kk + 双 a (arvokkaan)"],
+  "asia": ["asiaa", "asian", "asioita", "-ia 词：单数部分格 asiaa，属格 asian，复数部分格 a 变 o (asioita)"],
+  "asiakirjat": ["asiakirjoja | asiakirjaa", "asiakirjojen | asiakirjan", "asiakirjoja", "复数主格 asiakirjat：复数部分格 asiakirjoja（单数部分格 asiakirjaa）"],
+  "avioliitto": ["avioliittoa", "avioliiton", "avioliittoja", "-o 词 (tt → t)：部分格 avioliittoa，属格弱化为 avioliiton"],
+  "avoliitto": ["avoliittoa", "avoliiton", "avoliittoja", "-o 词 (tt → t)：部分格 avoliittoa，属格弱化为 avoliiton"],
+  "avomies": ["avomiestä", "avomiehen", "avomiehiä", "复合词变末尾 mies：单数部分格 avomiestä，单数属格 avomiehen"],
+  "bestman": ["bestmania", "bestmanin", "bestmaneja", "辅音结尾外来词先加 i：部分格 bestmania，属格 bestmanin，变格 bestmaniksi"],
+  "biisi = laulu": ["biisiä | laulua", "biisin | laulun", "biisejä | lauluja", "口语 biisiä/biisin；书面语 laulua/laulun"],
+  "eräs": ["erästä", "erään", "eräitä", "-äs 代词：单数部分格 erästä，单数属格 erään，复数部分格 eräitä"],
+  "esite": ["esitettä", "esitteen", "esitteitä", "-e 词 (逆向强级 t → tt！)：单数部分格单 t (esitettä)，属格双 tt (esitteen)"],
+  "henkilökortti": ["henkilökorttia", "henkilökortin", "henkilökortteja", "新 -i 词 (tt → t)：部分格 henkilökorttia，属格 henkilökortin"],
+  "henkilöllisyystodistus = henkkari": ["henkilöllisyystodistusta | henkkaria", "henkilöllisyystodistuksen | henkkarin", "henkilöllisyystodistuksia | henkkareita", "-us 词 (-todistusta/-ksen) = 口语新 -i 词 (henkkaria/henkkarin)"],
+  "hääpuku": ["hääpukua", "hääpuvun", "hääpukuja", "-u 词 (特殊交替 k → v！)：单数部分格 hääpukua，单数属格变为 hääpuvun！"],
+  "häät": ["häitä", "häiden | häitten", "häitä", "仅复数节庆词 (Monikkosana)：部分格 häitä，属格 häiden，内格 häissä，入格 häihin！"],
+  "irtaimistovahinko": ["irtaimistovahinkoa", "irtaimistovahingon", "irtaimistovahinkoja", "-o 词 (nk → ng！)：部分格 -vahinkoa，属格弱化为 -vahingon"],
+  "itse": ["itseä | itseäni", "itsen | itseni", "itsejä", "反身代词：部分格 itseä（常带人称词尾 itseäni/itseään），属格 itsen"],
+  "jokin": ["jotakin", "jonkin", "joitakin", "不定代词（某物）：只变前半部分 jo-，-kin 不变 → 部分格 jotakin，属格 jonkin！"],
+  "joku": ["jotakuta", "jonkun", "joitakuita", "不定代词（某人）：前后同时变格 → 单数部分格 jotakuta，单数属格 jonkun！"],
+  "jouluaatto": ["jouluaattoa", "jouluaaton", "jouluaattoja", "-o 词 (tt → t)：部分格 jouluaattoa，属格弱化为 jouluaaton"],
+  "juttu": ["juttua", "jutun", "juttuja", "-u 词 (tt → t)：单数部分格 juttua，单数属格弱化为 jutun"],
+  "kahvikuppi": ["kahvikuppia", "kahvikupin", "kahvikuppeja", "新 -i 词 (pp → p)：部分格 kahvikuppia，属格弱化为 kahvikupin"],
+  "kirkko/maistraatti": ["kirkkoa | maistraattia", "kirkon | maistraatin", "kirkkoja | maistraatteja", "kirkko (kk→k: kirkkoa/kirkon)；maistraatti (tt→t: maistraattia/maistraatin)"],
+  "koko": ["kokoa", "koon", "kokoja", "-o 词 (k → ∅)：尺码 koko 的属格 k 消失变为 koon！"],
+  "kuitti": ["kuittia", "kuitin", "kuitteja", "新 -i 词 (tt → t)：单数部分格 kuittia，单数属格 kuitin"],
+  "kulunut": ["kulunutta", "kuluneen", "kuluneita", "NUT-分词作形容词：单数部分格 kulunutta，单数属格词干变 -ee- (kuluneen)！"],
+  "kummisetä": ["kummisetää", "kummisedän", "kummisetiä", "-ä 词 (t → d！)：单数部分格 kummisetää，单数属格弱化为 kummisedän"],
+  "kummitäti": ["kummitätiä", "kummitädin", "kummitätejä", "新 -i 词 (t → d！)：单数部分格 kummitätiä，单数属格弱化为 kummitädin"],
+  "laaja": ["laajaa", "laajan", "laajoja", "-a 形容词：单数部分格 laajaa，属格 laajan，复数部分格 a 变 o (laajoja)"],
+  "laitteet": ["laitteita | laitetta", "laitteiden | laitteen", "laitteita", "复数主格 laitteet（单数 laite，逆向 t→tt）：复数部分格 laitteita，单数部分格 laitetta，单数属格 laitteen"],
+  "lapsuus": ["lapsuutta", "lapsuuden", "lapsuuksia", "-uus 性质名词：单数部分格 lapsuutta，单数属格 lapsuuden！"],
+  "liite": ["liitettä", "liitteen", "liitteitä", "-e 词 (逆向强级 t → tt！)：单数部分格单 t (liitettä)，单数属格双 tt (liitteen)"],
+  "lomake": ["lomaketta", "lomakkeen", "lomakkeita", "-e 词 (逆向强级 k → kk！)：单数部分格单 k (lomaketta)，单数属格双 kk (lomakkeen)"],
+  "lukko": ["lukkoa", "lukon", "lukkoja", "-o 词 (kk → k)：单数部分格 lukkoa，单数属格弱化为 lukon"],
+  "maahanmuuttovirasto = migri": ["maahanmuuttovirastoa | Migriä", "maahanmuuttoviraston | Migrin", "maahanmuuttovirastoja", "virastoa/viraston = Migriä/Migrin"],
+  "maksut": ["maksuja | maksua", "maksujen | maksun", "maksuja", "复数主格 maksut：复数部分格 maksuja，复数属格 maksujen"],
+  "meininki = tunnelma": ["meininkiä | tunnelmaa", "meiningin | tunnelman", "meininkejä | tunnelmia", "meininki (nk→ng: meininkiä / meiningin)；tunnelma (tunnelmaa / tunnelman)"],
+  "mieletön": ["mieletöntä", "mielettömän", "mielettömiä", "-tön 否定形容词 (逆向强级 t → tt！)：单数部分格单 t (mieletöntä)，单数属格双 tt (mielettömän)！"],
+  "moni": ["monta", "monen", "monia", "特殊数量词 moni：单数部分格特殊形式为 monta！单数属格 monen，复数部分格 monia"],
+  "murtovaras": ["murtovarasta", "murtovarkaan", "murtovarkaita", "-as 词 (逆向强级 ∅ → k！)：单数部分格 murtovarasta，单数属格 murtovarkaan！"],
+  "muutama": ["muutamaa", "muutaman", "muutamia", "限定词（几个）：单数部分格 muutamaa，单数属格 muutaman，复数部分格 muutamia"],
+  "neliö = neliömetri": ["neliötä | neliömetriä", "neliön | neliömetrin", "neliöitä | neliömetrejä", "neliö (-iö) → neliötä；neliömetri → neliömetriä"],
+  "neuvonta": ["neuvontaa", "neuvonnan", "neuvontoja", "-a 词 (nt → nn)：单数部分格 neuvontaa，单数属格弱化为 neuvonnan"],
+  "oleskelulupa": ["oleskelulupaa", "oleskeluluvan", "oleskelulupia", "-a 词 (p → v！)：单数部分格 oleskelulupaa，单数属格弱化为 oleskeluluvan！"],
+  "omavastuu": ["omavastuuta", "omavastuun", "omavastuita", "长元音 -uu 词：单数部分格加单 -ta (omavastuuta)，单数属格 omavastuun"],
+  "ompelukone": ["ompelukonetta", "ompelukoneen", "ompelukoneita", "-e 词：单数部分格 ompelukonetta，单数属格 ompelukoneen"],
+  "opas": ["opasta", "oppaan", "oppaita", "-as 词 (逆向强级 p → pp！)：单数部分格单 p (opasta)，单数属格双 pp (oppaan)！"],
+  "palvelupiste = tiski": ["palvelupistettä | tiskiä", "palvelupisteen | tiskin", "palvelupisteitä | tiskejä", "piste (-e 词) → palvelupistettä/palvelupisteen；tiski → tiskiä/tiskin"],
+  "pankkitunnukset": ["pankkitunnuksia", "pankkitunnusten | pankkitunnuksien", "pankkitunnuksia", "复数词：复数部分格 pankkitunnuksia，复数属格 pankkitunnusten，接格 pankkitunnuksilla"],
+  "pappi": ["pappia", "papin", "pappeja", "新 -i 词 (pp → p)：单数部分格 pappia，单数属格弱化为 papin"],
+  "pikkujoulut": ["pikkujouluja", "pikkujoulujen", "pikkujouluja", "复数节庆词：复数部分格 pikkujouluja，复数属格 pikkujoulujen"],
+  "polttarit": ["polttareita", "polttareiden", "polttareita", "仅复数节庆词：部分格 polttareita，属格 polttareiden，内格 polttareissa"],
+  "rakkaus": ["rakkautta", "rakkauden", "rakkauksia", "-uus 性质名词：单数部分格 rakkautta，单数属格 rakkauden！"],
+  "rekisteröity parisuhde": ["rekisteröityä parisuhdetta | parisuhdetta", "rekisteröidyn parisuhteen | parisuhteen", "rekisteröityjä parisuhteita", "双向交替：rekisteröity (属格 t→d: rekisteröidyn) + parisuhde (-e 词属格 hd→ht: parisuhteen)！"],
+  "rippijuhlat": ["rippijuhlia", "rippijuhlien", "rippijuhlia", "复数节庆词：复数部分格 rippijuhlia，复数属格 rippijuhlien"],
+  "ristiäiset/nimiäiset": ["ristiäisiä | nimiäisiä", "ristiäisten | nimiäisten", "ristiäisiä | nimiäisiä", "-iset 仅复数节庆词：部分格 ristiäisiä/nimiäisiä，属格 ristiäisten/nimiäisten"],
+  "suppea": ["suppeaa | suppeata", "suppean", "suppeita", "-ea 形容词：单数部分格 suppeaa (或 suppeata)，单数属格 suppean"],
+  "syntymäpäivät, synttärit": ["syntymäpäiviä | synttäreitä | syntymäpäivää", "syntymäpäivien | synttäreiden | syntymäpäivän", "syntymäpäiviä | synttäreitä", "生日派对（复数）：syntymäpäiviä / synttäreitä"],
+  "talvirengas": ["talvirengasta", "talvirenkaan", "talvirenkaita", "-as 词 (逆向强级 ng → nk！)：单数部分格 talvirengasta，单数属格 talvirenkaan！"],
+  "tekijä": ["tekijää", "tekijän", "tekijöitä", "-jä 词：单数部分格 tekijää，单数属格 tekijän，复数部分格 tekijöitä"],
+  "teltta": ["telttaa", "teltan", "telttoja", "-a 词 (tt → t)：单数部分格 telttaa，单数属格弱化为 teltan"],
+  "toimipiste": ["toimipistettä", "toimipisteen", "toimipisteitä", "-e 词：单数部分格 toimipistettä，单数属格 toimipisteen"],
+  "tupaantuliaiset, tuparit": ["tupaantuliaisia | tupareita", "tupaantuliaisten | tupareiden", "tupaantuliaisia | tupareita", "乔迁派对（仅复数）：书面语 tupaantuliaisia，口语 tupareita"],
+  "tuparit = tupaantuliaiset": ["tupareita | tupaantuliaisia", "tupareiden | tupaantuliaisten", "tupareita | tupaantuliaisia", "乔迁派对（仅复数）：口语 tupareita，书面语 tupaantuliaisia"],
+  "työlupa": ["työlupaa", "työluvan", "työlupia", "-a 词 (p → v！)：单数部分格 työlupaa，单数属格弱化为 työluvan！"],
+  "upea": ["upeaa | upeata", "upean", "upeita", "-ea 形容词：单数部分格 upeaa，单数属格 upean，离格 upealta"],
+  "uusivuosi": ["uuttavuotta", "uudenvuoden", "uusiavuosia", "必考复合词（uusi+vuosi 双边同时变格！）：单数部分格 uuttavuotta，单数属格 uudenvuoden！"],
+  "vaihtoehto": ["vaihtoehtoa", "vaihtoehdon", "vaihtoehtoja", "-o 词 (ht → hd！)：单数部分格 vaihtoehtoa，单数属格弱化为 vaihtoehdon！"],
+  "vappu": ["vappua", "vapun", "vappuja", "-u 词 (pp → p)：单数部分格 vappua，单数属格弱化为 vapun"],
+  "varas": ["varasta", "varkaan", "varkaita", "-as 词 (逆向强级 ∅ → k！)：单数部分格 varasta，单数属格 varkaan！"],
+  "varkaus": ["varkautta", "varkauden", "varkauksia", "头号考点！盗窃案 varkaus 按性质词变：单数部分格 varkautta，单数属格 varkauden！"],
+  "verkko": ["verkkoa", "verkon", "verkkoja", "-o 词 (kk → k)：单数部分格 verkkoa，单数属格弱化为 verkon"],
+  "virkailija": ["virkailijaa", "virkailijan", "virkailijoita", "-ija 人物词：单数部分格 virkailijaa，单数属格 virkailijan，复数部分格 virkailijoita"],
+  "ylioppilasjuhlat": ["ylioppilasjuhlia", "ylioppilasjuhlien", "ylioppilasjuhlia", "复数节庆词：复数部分格 ylioppilasjuhlia，复数属格 ylioppilasjuhlien"],
+  "ylioppilaslakki": ["ylioppilaslakkia", "ylioppilaslakin", "ylioppilaslakkeja", "新 -i 词 (kk → k)：部分格 ylioppilaslakkia，属格弱化为 ylioppilaslakin"],
+  "ystävyys": ["ystävyyttä", "ystävyyden", "ystävyyksiä", "-yys 性质名词：单数部分格 ystävyyttä，单数属格 ystävyyden！"]
+};
+
+function getNominalData(fi) {
+  if (/\([1-6]\)/.test(fi) || ADVERBS_AND_PHRASES.has(fi)) return null;
+  if (NOM_OVERRIDES[fi]) {
+    const [p, g, pl, h] = NOM_OVERRIDES[fi];
+    return { sg_part: p, sg_gen: g, pl_part: pl, hint: h };
+  }
+  const back = /[aou]/i.test(fi);
+  const A = back ? "a" : "ä";
+  if (fi.endsWith("iset")) {
+    const s = fi.slice(0, -4);
+    return { sg_part: s + "isi" + A, sg_gen: s + "isten", pl_part: s + "isi" + A, hint: "-iset 仅复数节庆词 (Monikkosana)：部分格 -isia/-isiä，属格 -isten，入格 -isiin" };
+  }
+  if (fi.endsWith("nen")) {
+    const s = fi.slice(0, -3);
+    return { sg_part: s + "st" + A, sg_gen: s + "sen", pl_part: s + "si" + A, hint: `-nen 词：去 -nen 换 -st${A} (部分格) / -sen (属格) / -si${A} (复数部分格)` };
+  }
+  if (fi.endsWith("us") || fi.endsWith("os") || fi.endsWith("ys")) {
+    const s = fi.slice(0, -1);
+    return { sg_part: fi + "t" + A, sg_gen: s + "ksen", pl_part: s + "ksi" + A, hint: `-${fi.slice(-2)} 行为结果名词：单数部分格 +t${A}，单数属格词干变 -kse- (-ksen)` };
+  }
+  if (fi.endsWith("io") || fi.endsWith("iö")) {
+    return { sg_part: fi + "t" + A, sg_gen: fi + "n", pl_part: fi + "it" + A, hint: `-${fi.slice(-2)} 词：单数部分格 +t${A}，单数属格 +n` };
+  }
+  if (fi.endsWith("o") || fi.endsWith("u") || fi.endsWith("y") || fi.endsWith("ö")) {
+    return { sg_part: fi + A, sg_gen: fi + "n", pl_part: fi + "j" + A, hint: `-${fi.slice(-1)} 词（无辅音交替）：单数部分格 +${A}，单数属格 +n` };
+  }
+  if (fi.endsWith("a") || fi.endsWith("ä")) {
+    return { sg_part: fi + A, sg_gen: fi + "n", pl_part: fi.slice(0, -1) + "i" + A, hint: `-${fi.slice(-1)} 词（无辅音交替）：单数部分格 +${A}，单数属格 +n，复数部分格词尾元音消失 +i${A}` };
+  }
+  if (fi.endsWith("i")) {
+    return { sg_part: fi + A, sg_gen: fi + "n", pl_part: fi.slice(0, -1) + "ej" + A, hint: `新 -i 词：单数部分格 +${A}，单数属格 +n` };
+  }
+  return { sg_part: fi + A, sg_gen: fi + "n", pl_part: fi + "i" + A, hint: "常规名词变格" };
+}
+
+// ==================== 3. 动词类型、时态与 5 大分词引擎 ====================
+const VERB_OVERRIDES = {
+  "erota": ["4","无","eroan","erosi","eronnut","erottu","eroava","erottava","eroama","第4类动词 (-ota)：过去时 erosi，主动过去分词 eronnut；常搭配 + sta/stä（分手/离婚）。"],
+  "hakea": ["1","k → ∅","haen","haki","hakenut","haettu","hakeva","haettava","hakema","第1类动词 (k → ∅)：minä haen，过去时 haki，被动分词弱级 haettu / haettava！"],
+  "hiljentyä": ["1","nt → nn","hiljennyn","hiljentyi","hiljentynyt","hiljennytty","hiljentyvä","hiljennyttävä","hiljentymä","第1类动词 (nt → nn)：minä hiljennyn，被动过去分词 hiljennytty。"],
+  "hoitaa": ["1","t → d","hoidan","hoiti","hoitanut","hoidettu","hoitava","hoidettava","hoitama","第1类动词 (t → d)：minä hoidan；被动分词 -aa 变 e (hoidettu / hoidettava)。"],
+  "huomata": ["4","无","huomaan","huomasi","huomannut","huomattu","huomaava","huomattava","huomaama","第4类动词 (-ata)：过去时 huomasi，主动过去分词双 n (huomannut)。"],
+  "hävitä": ["4","无","häviän","hävisi","hävinnyt","hävitty","häviävä","hävittävä","häviämä","第4类动词 (-itä)：词干补 ä (häviän)，过去时 hävisi，主动过去分词 hävinnyt。"],
+  "jäädä": ["2","无","jään","jäi","jäänyt","jääty","jäävä","jäätävä","jäämä","第2类动词 (-dä)：过去时 jäi，被动过去分词单 t (jääty)。搭配 jäädä kiinni / jäädä + maan/mään。"],
+  "kaataa": ["1","t → d (过去oi)","kaadan","kaatoi","kaatanut","kaadettu","kaatava","kaadettava","kaatama","第1类动词 (t → d)：注意过去时 a 变 o (kaatoi！)，被动过去分词 kaadettu。"],
+  "kadota": ["4","逆向 d → t","katoan","katosi","kadonnut","kadottu","katoava","kadottava","katoama","第4类必考词 (d → t 逆向强级！)：原形与过去/被动分词用 d (kadonnut/kadottu)，人称变位与 VA/MA 用强级 t (katoan/katosi/katoava)！"],
+  "kattaa": ["1","tt → t (过去oi)","katan","kattoi","kattanut","katettu","kattava","katettava","kattama","第1类动词 (tt → t)：过去时 kattoi，被动分词 katettu，现在分词 kattava (全面的)。"],
+  "kelvata": ["4","逆向 lv → lp","kelpaan","kelpasi","kelvannut","kelvattu","kelpaava","kelvattava","kelpaama","第4类必考词 (lv → lp 逆向强级！)：原形与过去/被动分词用 lv (kelvannut/kelvattu)，现在/过去时用强级 lp (kelpaan/kelpasi)！支配 + lle。"],
+  "kertoa": ["1","rt → rr","kerron","kertoi","kertonut","kerrottu","kertova","kerrottava","kertoma","第1类动词 (rt → rr)：minä kerron，被动过去分词 kerrottu。"],
+  "korvata": ["4","无 (rv不变)","korvaan","korvasi","korvannut","korvattu","korvaava","korvattava","korvaama","第4类动词 (-ata)：注意 rv 不发生交替 (korvaan / korvasi / korvannut)！"],
+  "käydä": ["2","过去时加 v","käyn","kävi","käynyt","käyty","käyvä","käytävä","käymä","第2类不规则动词：注意过去时出现 v (kävi！)；Se käy = 没问题/行得通。"],
+  "sopia": ["1","p → v","sovin","sopi","sopinut","sovittu","sopiva","sovittava","sopima","第1类动词 (p → v)：minä sovin，被动过去分词 sovittu，现在分词 sopiva (合适的)。"],
+  "laittaa": ["1","tt → t (过去oi)","laitan","laittoi","laittanut","laitettu","laittava","laitettava","laittama","第1类动词 (tt → t)：过去时 a 变 o (laittoi！)，被动过去分词 laitettu。"],
+  "maksaa": ["1","无 (过去oi)","maksan","maksoi","maksanut","maksettu","maksava","maksettava","maksama","第1类动词：过去时 maksoi，被动分词 a 变 e (maksettu / maksettava)。"],
+  "mennä": ["3","无","menen","meni","mennyt","menty","menevä","mentävä","menemä","第3类动词 (-nnä)：主动过去分词 mennyt，被动过去分词 menty。"],
+  "murtautua": ["1","t → d","murtaudun","murtautui","murtautunut","murtauduttu","murtautuva","murtauduttava","murtautuma","第1类反身动词 (-utua，t → d！)：minä murtaudun，被动分词 murtauduttu；支配 + MIHIN。"],
+  "neuvoa": ["1","无","neuvon","neuvoi","neuvonut","neuvottu","neuvova","neuvottava","neuvoma","第1类动词 (-oa)：用法 neuvoa + P + maan/mään（建议某人去做某事）。"],
+  "ommella": ["3","逆向 mm → mp","ompelen","ompeli","ommellut","ommeltu","ompeleva","ommeltava","ompelema","第3类必考词 (mm → mp 逆向强级！)：原形与过去/被动分词用 mm (ommellut/ommeltu)，人称变位与 VA/MA 用 mp (ompelen/ompeleva)！"],
+  "onnitella": ["3","逆向 t → tt","onnittelen","onnitteli","onnitellut","onniteltu","onnitteleva","onniteltava","onnittelema","第3类必考词 (t → tt 逆向强级！)：原形与过去/被动分词单 t (onnitellut/onniteltu)，人称变位与 VA/MA 双 tt (onnittelen/onnitteleva)！支配 + P。"],
+  "pitää": ["1","t → d","pidän","piti","pitänyt","pidetty","pitävä","pidettävä","pitämä","第1类动词 (t → d)：搭配 pitää puhe (发表演讲)，被动过去分词 pidetty。"],
+  "pyytää": ["1","t → d (过去s)","pyydän","pyysi","pyytänyt","pyydetty","pyytävä","pyydettävä","pyytämä","第1类必考词 (t → d，过去时 t → s！)：现在时 pyydän，过去时 pyysi，被动分词 pyydetty。"],
+  "rikkoa": ["1","kk → k","rikon","rikkoi","rikkonut","rikottu","rikkova","rikottava","rikkoma","第1类动词 (kk → k)：打破/弄坏，被动过去分词 rikottu。"],
+  "ruveta": ["4","逆向 v → p","rupean","rupesi","ruvennut","ruvettu","rupeava","ruvettava","rupeama","第4类必考词 (v → p 逆向强级！)：原形与过去/被动分词用 v (ruvennut/ruvettu)，人称变位与 VA/MA 用 p (rupean/rupesi/rupeava)！后接 + maan/mään。"],
+  "selvitä": ["4","无","selviän","selvisi","selvinnyt","selvitty","selviävä","selvittävä","selviämä","第4类不及物动词 (-itä)：挺过来 (+ sta) / 水落石出 (+ lle)；词干补 ä (selviän)，过去分词 selvinnyt。"],
+  "siirtyä": ["1","rt → rr","siirryn","siirtyi","siirtynyt","siirrytty","siirtyvä","siirryttävä","siirtymä","第1类动词 (rt → rr)：minä siirryn，被动过去分词 siirrytty。"],
+  "suunnitella": ["3","逆向 t → tt","suunnittelen","suunnitteli","suunnitellut","suunniteltu","suunnitteleva","suunniteltava","suunnittelema","第3类必考词 (t → tt 逆向强级！)：原形与过去/被动分词单 t (suunnitellut/suunniteltu)，人称变位与 VA/MA 双 tt (suunnittelen/suunnitteleva)！"],
+  "taitaa": ["1","t → d (过去s)","taidan","taisi","taitanut","taidettu","taitava","taidettava","taitama","第1类情态动词 (t → d，过去时 taisi！)：恐怕/大概，现在分词 taitava (熟练的)。"],
+  "tajuta": ["4","无","tajuan","tajusi","tajunnut","tajuttu","tajuava","tajuttava","tajuama","第4类动词 (-uta)：意识到，词干补 a (tajuan)，过去时 tajusi，过去分词 tajunnut。"],
+  "tapahtua": ["1","ht → hd","tapahtuu","tapahtui","tapahtunut","tapahduttu","tapahtuva","tapahduttava","tapahtuma","第1类动词 (ht → hd)：发生，主动过去分词 tapahtunut，MA-分词名词 tapahtuma。"],
+  "tehdä": ["2","特殊词干","teen","teki","tehnyt","tehty","tekevä","tehtävä","tekemä","第2类必考不规则动词：过去/被动分词用 teh- (tehnyt/tehty/tehtävä)，而 VA/MA 分词用强级 teke- (tekevä/tekemä)！"],
+  "tulkata": ["4","逆向 k → kk","tulkkaan","tulkkasi","tulkannut","tulkattu","tulkkaava","tulkattava","tulkkaama","第4类必考词 (k → kk 逆向强级！)：原形与过去/被动分词单 k (tulkannut/tulkattu)，人称变位与 VA/MA 双 kk (tulkkaan/tulkkasi/tulkkaava)！"],
+  "tunnistautua": ["1","t → d","tunnistaudun","tunnistautui","tunnistautunut","tunnistauduttu","tunnistautuva","tunnistauduttava","tunnistautuma","第1类反身动词 (-utua，t → d！)：身份认证，minä tunnistaudun，被动分词 tunnistauduttu。"],
+  "tuntua": ["1","nt → nn","tunnun","tuntui","tuntunut","tunnuttu","tuntuva","tunnuttava","tuntuma","第1类感觉动词 (nt → nn)：感觉像，支配 + lta/ltä (tuntua mukavalta)。"],
+  "vaatia": ["1","t → d","vaadin","vaati","vaatinut","vaadittu","vaativa","vaadittava","vaatima","第1类动词 (t → d)：要求，minä vaadin，过去时 vaati，被动过去分词 vaadittu。"],
+  "viedä": ["2","过去时 vei","vien","vei","vienyt","viety","vievä","vietävä","viemä","第2类动词 (-dä)：拿走/偷走，注意过去时 vei，被动过去分词 viety。"],
+  "vihkiä": ["1","hk → h","vihin","vihki","vihkinyt","vihitty","vihkivä","vihittävä","vihkimä","第1类特殊交替动词 (hk → h！)：证婚，弱级 k 消失 → minä vihin，被动过去分词 vihitty！"],
+  "vuokrata": ["4","无","vuokraan","vuokrasi","vuokrannut","vuokrattu","vuokraava","vuokrattava","vuokraama","第4类动词 (-ata)：租借，必考支配出格 + MISTÄ (vuokrata puku liikkeestä)。"]
+};
+
+function computeSingleVerb(base, vtype) {
+  if (VERB_OVERRIDES[base]) {
+    const [vt, kpt, mina, past, nut, tu, va, tava, ma, hint] = VERB_OVERRIDES[base];
+    return { base, vtype: vt, kpt, mina, past, nut, tu, va, tava, ma, hint };
+  }
+  const back = /[aou]/i.test(base);
+  const A = back ? "a" : "ä";
+  const U = back ? "u" : "y";
+  // Regular -ttaa / -ttää Type 1
+  if (base.endsWith("ttaa") || base.endsWith("ttää")) {
+    const root = base.slice(0, -4); // before ttaa
+    return {
+      base, vtype: "1", kpt: "tt → t",
+      mina: root + "t" + A + "n", past: root + "tti",
+      nut: root + "tt" + A + "n" + U + "t", tu: root + "tett" + U,
+      va: root + "tt" + A + "v" + A, tava: root + "tett" + A + "v" + A, ma: root + "tt" + A + "m" + A,
+      hint: `第1类动词 (tt → t)：现在时 ${root}t${A}n；以 -${A}${A} 结尾在被动分词中元音变为 e 且用弱级 (${root}tett${U} / ${root}tett${A}v${A})！`
+    };
+  }
+  // Regular -staa / -stää Type 1
+  if (base.endsWith("staa") || base.endsWith("stää")) {
+    const root = base.slice(0, -2);
+    return {
+      base, vtype: "1", kpt: "无 (st不变)",
+      mina: root + A + "n", past: root + "i",
+      nut: root + A + "n" + U + "t", tu: root + "ett" + U,
+      va: root + A + "v" + A, tava: root + "ett" + A + "v" + A, ma: root + A + "m" + A,
+      hint: `第1类动词 (st 不变)：被动分词末尾 -${A}${A} 变为 e (${root}ett${U})。`
+    };
+  }
+  // Regular -lla / -llä Type 3
+  if (base.endsWith("lla") || base.endsWith("llä")) {
+    const root = base.slice(0, -2);
+    return {
+      base, vtype: "3", kpt: "无",
+      mina: root + "en", past: root + "i",
+      nut: root + "l" + U + "t", tu: root + "t" + U,
+      va: root + "ev" + A, tava: root + "t" + A + "v" + A, ma: root + "em" + A,
+      hint: `第3类动词 (-ll${A})：词干 ${root}e-，主动过去分词 ${root}l${U}t，被动过去分词 ${root}t${U}。`
+    };
+  }
+  // Regular -ua / -ia Type 1
+  const stem = base.slice(0, -1);
+  return {
+    base, vtype: vtype || "1", kpt: "无",
+    mina: stem + "n", past: stem.endsWith("i") ? stem : stem + "i",
+    nut: stem + "n" + U + "t", tu: stem + "tt" + U,
+    va: stem + "v" + A, tava: stem + "tt" + A + "v" + A, ma: stem + "m" + A,
+    hint: `第1类动词：无辅音交替，主动过去分词 ${stem}n${U}t，被动过去分词 ${stem}tt${U}。`
+  };
+}
+
+function getVerbDataFromEntry(fi) {
+  const regex = /([a-zäöåA-ZÄÖÅ]+)\s*\(([1-6])\)/g;
+  const matches = [...fi.matchAll(regex)];
+  if (!matches.length) return null;
+  // Support entries like "viedä (2) varastaa (1)" or "käydä (2) sopia (1)" by taking primary or joining
+  const primary = computeSingleVerb(matches[0][1].toLowerCase(), matches[0][2]);
+  if (matches.length > 1) {
+    const second = computeSingleVerb(matches[1][1].toLowerCase(), matches[1][2]);
+    return {
+      base: `${primary.base} / ${second.base}`,
+      vtype: `${primary.vtype} | ${second.vtype}`,
+      kpt: `${primary.kpt} / ${second.kpt}`,
+      mina: `${primary.mina} | ${second.mina}`,
+      past: `${primary.past} | ${second.past}`,
+      nut: `${primary.nut} | ${second.nut}`,
+      tu: `${primary.tu} | ${second.tu}`,
+      va: `${primary.va} | ${second.va}`,
+      tava: `${primary.tava} | ${second.tava}`,
+      ma: `${primary.ma} | ${second.ma}`,
+      hint: `双动词词条：① ${primary.base}: ${primary.hint} ② ${second.base}: ${second.hint}`
+    };
+  }
+  return primary;
+}
+
+// ==================== 4. 支配格与句型特训题库 (Rektio Drills) ====================
+const REKTIO_DRILLS = [
+  { cat: 0, rule: "jäädä (2) + maan/mään", en: "to stay and (do) something", sentence: "Jäin kotiin ___ (siivota) sotkua.", ans: "siivoamaan", note: "jäädä 后接第3不定式入格 (-maan/-mään)" },
+  { cat: 0, rule: "murtautua (1) + MIHIN", en: "to break into WHERE", sentence: "Murtovaras murtautui ___ (kellarikomero).", ans: "kellarikomeroon", note: "murtautua 支配入格 Illatiivi (+ MIHIN)" },
+  { cat: 0, rule: "G + kautta", en: "via / through + Genitive", sentence: "Varas tuli sisään ___ (ikkuna) kautta.", ans: "ikkunan", note: "后置词 kautta 要求前面的名词用属格 (Genetiivi)" },
+  { cat: 0, rule: "lojua (1) + MISSÄ", en: "to lie around WHERE (Inessive/Adessive)", sentence: "Vanhat tavarat lojuivat ___ (kellari).", ans: "kellarissa", note: "lojua 搭配静态位置格 (+ MISSÄ)" },
+  { cat: 0, rule: "kelvata (4) + lle", en: "to be good enough for (+ Allative)", sentence: "Kulunut ompelukone ei kelvannut ___ (varas).", ans: "varkaalle", note: "kelvata 支配向格 (-lle)，且 varas 词干逆向变强为 varkaa-！" },
+  { cat: 0, rule: "olla hyötyä + sta/stä", en: "to be of benefit from (+ Elative)", sentence: "___ (Kotivakuutus) oli meille paljon hyötyä.", ans: "Kotivakuutuksesta | kotivakuutuksesta", note: "olla hyötyä 搭配出格 (-sta/-stä)" },
+  { cat: 0, rule: "neuvoa (1) + P + maan/mään", en: "to advise sb (PtV) to do sth (-maan)", sentence: "Poliisi neuvoi ___ (minä) tekemään rikosilmoituksen.", ans: "minua", note: "被建议的人用部分格 (P)，动作动词用 -maan/-mään" },
+  { cat: 0, rule: "G + päästä", en: "in / after (time) + Genitive", sentence: "Vakuutusyhtiön päätös tulee ___ (viikko) päästä.", ans: "viikon", note: "后置词 päästä 要求前面的时间词用属格 (viikko → viikon)" },
+  { cat: 2, rule: "viimeistään X = X mennessä", en: "by (deadline) — mennessä requires Illative!", sentence: "Palauta lomake ___ (perjantai) mennessä!", ans: "perjantaihin", note: "后置词 mennessä（在…之前）必考支配入格 Illatiivi (perjantaihin mennessä)！" },
+  { cat: 2, rule: "hakea (1) korvausta", en: "to apply for compensation (+ PtV)", sentence: "Haemme ___ (korvaus) vakuutusyhtiöltä.", ans: "korvausta", note: "申请赔偿用部分格 korvausta" },
+  { cat: 5, rule: "tunnistautua (1) + MIHIN", en: "to identify oneself into WHERE", sentence: "Tunnistaudun ___ (verkkopalvelu) pankkitunnuksilla.", ans: "verkkopalveluun", note: "tunnistautua 支配入格 (+ MIHIN)" },
+  { cat: 5, rule: "kiitos + sta/stä", en: "thank you for (+ Elative)", sentence: "Paljon kiitoksia hyvästä ___ (neuvo)!", ans: "neuvosta", note: "kiitos 支配出格 (-sta/-stä)" },
+  { cat: 6, rule: "osallistua (1) + MIHIN", en: "to participate in (+ Illative)", sentence: "Osallistumme lauantaina ystävän ___ (häät).", ans: "häihin", note: "osallistua 支配入格 (+ MIHIN)，häät 的复数入格为 häihin！" },
+  { cat: 6, rule: "G + luokse", en: "to someone's place (+ Genitive)", sentence: "Matkustamme ___ (sukulainen) luokse.", ans: "sukulaisen", note: "luokse 要求前面的人用属格" },
+  { cat: 6, rule: "kesken + G", en: "in the middle of (+ Genitive)", sentence: "Hän joutui lähtemään kesken ___ (juhannus).", ans: "juhannuksen", note: "前置词 kesken 支配属格 (Genetiivi)" },
+  { cat: 6, rule: "vuokrata (4) + MISTÄ", en: "to rent FROM (+ Elative)", sentence: "Sulhanen vuokrasi puvun ___ (liike).", ans: "liikkeestä", note: "芬兰语“租衣服/租房”思维是从某处租，用出格 (+ MISTÄ)！" },
+  { cat: 6, rule: "pyytää (1) + P + ksi", en: "to ask sb (PtV) to become sth (Translative)", sentence: "Morsian pyysi ystäväänsä ___ (kaaso).", ans: "kaasoksi", note: "担任某种角色/身份用变格 (-ksi)" },
+  { cat: 6, rule: "tulla (3) + ksi", en: "to become something (+ Translative)", sentence: "Veljeni tuli ___ (bestman).", ans: "bestmaniksi", note: "tulla + -ksi 表示成为某角色" },
+  { cat: 6, rule: "näyttää (1) + lta/ltä", en: "to look like (+ Ablative)", sentence: "Hääpari näytti todella ___ (upea)!", ans: "upealta", note: "感官动词 näyttää / tuntua / kuulostaa 支配离格 (-lta/-ltä)" },
+  { cat: 6, rule: "onnitella (3) + P", en: "to congratulate sb (+ Partitive)", sentence: "Kaikki vieraat onnittelivat ___ (hääpari).", ans: "hääparia", note: "onnitella 的宾语永远用部分格 (+ P)" },
+  { cat: 6, rule: "olla ikävä + P", en: "to miss someone/something (+ Partitive)", sentence: "Minulla on kova ikävä ___ (lapsuus).", ans: "lapsuutta", note: "olla ikävä 后接部分格 (lapsuus → lapsuutta)" },
+  { cat: 6, rule: "tuntua (1) + lta/ltä", en: "to feel like (+ Ablative)", sentence: "Juhlat tuntuivat ___ (mahtava)!", ans: "mahtavilta | mahtavalta", note: "tuntua 支配离格 (-lta/-ltä)" },
+  { cat: 6, rule: "tulla (3) toimeen + G + kanssa", en: "to get along with (+ Genitive + kanssa)", sentence: "Tulen hyvin toimeen ___ (avopuoliso) kanssa.", ans: "avopuolison", note: "kanssa 要求前面的名词用属格" },
+  { cat: 7, rule: "seurustella (3) + G + kanssa", en: "to date someone (+ Genitive + kanssa)", sentence: "Hän seurustelee uuden ___ (kumppani) kanssa.", ans: "kumppanin", note: "seurustella + G + kanssa" },
+  { cat: 7, rule: "erota (4) + sta/stä", en: "to divorce / break up from (+ Elative)", sentence: "Hän erosi ___ (aviomies) viime vuonna.", ans: "aviomiehestä", note: "erota 支配出格 (-sta/-stä)，mies 词干为 miehe-" },
+  { cat: 7, rule: "olla kihloissa / naimisissa + G + kanssa", en: "to be engaged / married to (+ Genitive + kanssa)", sentence: "Liisa on naimisissa ___ (poikaystävä) kanssa.", ans: "poikaystävän", note: "状态用内格 kihloissa/naimisissa，对象用 G + kanssa" },
+  { cat: 9, rule: "mennä (3) kihloihin / naimisiin + G + kanssa", en: "to get engaged / married to (+ Genitive + kanssa)", sentence: "He menivät naimisiin ___ (kesä → 入格/内格，或配 G + kanssa: kumppani).", ans: "kumppanin", note: "动作变化用入格 kihloihin/naimisiin + G + kanssa" },
+  { cat: 9, rule: "kosia (1) + P", en: "to propose to (+ Partitive)", sentence: "Hän kosi ___ (tyttöystävä) uudenvuodenaattona.", ans: "tyttöystävää", note: "kosia 必考部分格宾语 (+ P)" },
+  { cat: 9, rule: "viettää (1) + P", en: "to spend/celebrate a holiday (+ Partitive)", sentence: "Vietämme ___ (pääsiäinen) kotona.", ans: "pääsiäistä", note: "viettää 支配部分格 (pääsiäinen → pääsiäistä)" },
+  { cat: 9, rule: "juhlia (1) + P", en: "to celebrate (+ Partitive)", sentence: "Juhlimme viikonloppuna ___ (tuparit).", ans: "tupareita", note: "juhlia 支配部分格，tuparit 的复数部分格为 tupareita" },
+  { cat: 10, rule: "selvitä (4) + lle", en: "to become clear to (+ Allative)", sentence: "Totuus selvisi vihdoin ___ (bestman).", ans: "bestmanille", note: "selvitä + lle 表示某事对某人水落石出" },
+  { cat: 10, rule: "naurattaa (1) + P", en: "to make someone laugh (+ Partitive)", sentence: "Hauska juttu nauratti ___ (vieraat / me).", ans: "vieraita | meitä", note: "使役情感动词 naurattaa 宾语用部分格" },
+  { cat: 10, rule: "ruveta (4) + maan/mään", en: "to start doing (+ -maan/-mään)", sentence: "Kaikki rupesivat ___ (nauraa) yhtäkkiä.", ans: "nauramaan", note: "ruveta 后接第3不定式入格 (-maan/-mään)" }
+];
+
+// ==================== 5. 构建全量结构化数据集 ====================
+let ALL_ITEMS = [];
+function rebuildItems() {
+  ALL_ITEMS = RAW_ROWS.map((r, idx) => {
+    const [catIdx, fi, en] = r;
+    const vData = getVerbDataFromEntry(fi);
+    const nData = getNominalData(fi);
+    return {
+      id: idx,
+      catIdx,
+      catName: CATEGORIES[catIdx] || "自定义章节",
+      fi,
+      en,
+      isVerb: !!vData,
+      verb: vData,
+      isNominal: !!nData,
+      nominal: nData
+    };
+  });
+}
+rebuildItems();
+
+// ==================== 6. 芬兰语 TTS 发音引擎（自动清洗语法符号） ====================
+function cleanFinnishForTTS(text) {
+  return text
+    .replace(/\([1-6]\)/g, "")
+    .replace(/\+\s*(MIHIN|MISTÄ|MISSÄ|P|G|sta\/stä|lta\/ltä|maan\/mään|lle|ksi|kanssa)/gi, "")
+    .replace(/\bG\s*\+/g, "")
+    .replace(/\bP\s*\+/g, "")
+    .replace(/=/g, " , ")
+    .replace(/\//g, " , ")
+    .replace(/[()]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function speakText(rawText) {
+  if (!("speechSynthesis" in window)) return;
+  window.speechSynthesis.cancel();
+  const clean = cleanFinnishForTTS(rawText);
+  const utter = new SpeechSynthesisUtterance(clean);
+  utter.lang = "fi-FI";
+  utter.rate = 0.92;
+  const voices = window.speechSynthesis.getVoices();
+  const fiVoice = voices.find(v => v.lang.toLowerCase().includes("fi") && v.name.includes("Natural"))
+               || voices.find(v => v.lang.toLowerCase().includes("fi"));
+  if (fiVoice) utter.voice = fiVoice;
+  window.speechSynthesis.speak(utter);
+}
+window.speechSynthesis && window.speechSynthesis.onvoiceschanged !== undefined && (window.speechSynthesis.onvoiceschanged = () => {});
+
+// ==================== 7. 状态管理与界面渲染 ====================
+let currentCat = "0"; // "all" or index string
+let currentMode = "match";
+
+// Match state
+let matchPool = [];
+let matchBatchIdx = 0;
+let selectedEnId = null;
+let selectedFiId = null;
+let matchedIds = new Set();
+
+// Drill cursors
+let spellPool = [], spellIdx = 0;
+let nomPool = [], nomIdx = 0, includePlPart = false;
+let verbPool = [], verbIdx = 0;
+let verbChecks = { vtype: true, tense: true, nut: true, tu: true, va: false, tava: false, ma: false };
+let rektioPool = [], rektioIdx = 0;
+let activeInputEl = null;
+
+function initCategorySelect() {
+  const sel = document.getElementById("catSelect");
+  sel.innerHTML = `<option value="all">🌟 全部 11 个小节合集 (${ALL_ITEMS.length} 词)</option>` +
+    CATEGORIES.map((c, i) => {
+      const cnt = ALL_ITEMS.filter(x => x.catIdx === i).length;
+      return `<option value="${i}">${i + 1}. ${c} (${cnt} 词)</option>`;
+    }).join("");
+  sel.value = currentCat;
+}
+
+function getFilteredItems() {
+  if (currentCat === "all") return [...ALL_ITEMS];
+  const idx = parseInt(currentCat, 10);
+  return ALL_ITEMS.filter(x => x.catIdx === idx);
+}
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function onCategoryChange() {
+  currentCat = document.getElementById("catSelect").value;
+  resetPools();
+  renderCurrentMode();
+}
+
+function switchMode(m) {
+  currentMode = m;
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+  document.getElementById("tab-" + m).classList.add("active");
+  renderCurrentMode();
+}
+
+function resetPools() {
+  const items = getFilteredItems();
+  matchPool = [...items];
+  matchBatchIdx = 0;
+  matchedIds.clear();
+  selectedEnId = null;
+  selectedFiId = null;
+
+  spellPool = [...items];
+  spellIdx = 0;
+
+  nomPool = items.filter(x => x.isNominal);
+  nomIdx = 0;
+
+  verbPool = items.filter(x => x.isVerb);
+  verbIdx = 0;
+
+  const cIdx = currentCat === "all" ? null : parseInt(currentCat, 10);
+  const rFiltered = cIdx === null ? REKTIO_DRILLS : REKTIO_DRILLS.filter(r => r.cat === cIdx);
+  rektioPool = rFiltered.length ? rFiltered : REKTIO_DRILLS;
+  rektioIdx = 0;
+}
+
+function renderCurrentMode() {
+  if (currentMode === "match") renderMatchMode();
+  else if (currentMode === "spell") renderSpellMode();
+  else if (currentMode === "nominal") renderNominalMode();
+  else if (currentMode === "verb") renderVerbMode();
+  else if (currentMode === "rektio") renderRektioMode();
+  else if (currentMode === "list") renderListMode();
+}
+
+// ==================== 模式 1：多邻国式单词配对 (5对一组，全覆盖不遗漏) ====================
+let currentLeftBatch = [];
+let currentRightBatch = [];
+
+function prepareMatchBatch() {
+  const batch = matchPool.slice(matchBatchIdx, matchBatchIdx + 5);
+  matchedIds.clear();
+  selectedEnId = null;
+  selectedFiId = null;
+  currentLeftBatch = shuffle(batch);
+  currentRightBatch = shuffle(batch);
+}
+
+function renderMatchMode() {
+  const panel = document.getElementById("mainPanel");
+  if (!matchPool.length) {
+    panel.innerHTML = `<p>当前分类暂无词条。</p>`;
+    return;
+  }
+  if (matchedIds.size === 0 && currentLeftBatch.length === 0) {
+    prepareMatchBatch();
+  }
+  const totalBatches = Math.ceil(matchPool.length / 5);
+  const curBatchNum = Math.floor(matchBatchIdx / 5) + 1;
+
+  panel.innerHTML = `
+    <div class="status-bar">
+      <div><b>模式 1：多邻国式单词配对</b>（点击左列英文 + 右列芬兰语；点击芬兰语自动发音）</div>
+      <div>
+        本节进度：第 <b>${curBatchNum} / ${totalBatches}</b> 组（共 ${matchPool.length} 词，绝无遗漏）
+        <button onclick="shuffleMatchPool()" style="margin-left:8px; padding:4px 10px;">🔀 打乱全节顺序</button>
+      </div>
+    </div>
+    <div class="match-grid">
+      <div class="match-col">
+        <div class="match-col-title">🇬🇧 English (英语释义)</div>
+        ${currentLeftBatch.map(item => `
+          <div class="match-card ${matchedIds.has(item.id) ? 'matched' : ''} ${selectedEnId === item.id ? 'selected' : ''}"
+               id="en-card-${item.id}" onclick="selectEnCard(${item.id})">
+            <span>${escapeHtml(item.en)}</span>
+          </div>
+        `).join("")}
+      </div>
+      <div class="match-col">
+        <div class="match-col-title">🇫🇮 Suomi (点击卡片朗读发音)</div>
+        ${currentRightBatch.map(item => `
+          <div class="match-card ${matchedIds.has(item.id) ? 'matched' : ''} ${selectedFiId === item.id ? 'selected' : ''}"
+               id="fi-card-${item.id}" onclick="selectFiCard(${item.id}, ${JSON.stringify(item.fi).replace(/"/g, '&quot;')})">
+            <span>${escapeHtml(item.fi)}</span>
+            <span style="font-size:0.85rem; opacity:0.65;">🔊</span>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+    <div class="action-bar" style="margin-top:22px;">
+      <button onclick="prevMatchBatch()" ${matchBatchIdx === 0 ? 'disabled' : ''}>⬅️ 上一组 (5词)</button>
+      <button class="btn-primary" onclick="nextMatchBatch()">➡️ 下一组 (5词)</button>
+    </div>
+  `;
+}
+
+function selectEnCard(id) {
+  if (matchedIds.has(id)) return;
+  selectedEnId = (selectedEnId === id) ? null : id;
+  checkMatchPair();
+}
+
+function selectFiCard(id, fiText) {
+  speakText(fiText);
+  if (matchedIds.has(id)) return;
+  selectedFiId = (selectedFiId === id) ? null : id;
+  checkMatchPair();
+}
+
+function checkMatchPair() {
+  if (selectedEnId !== null && selectedFiId !== null) {
+    const enItem = currentLeftBatch.find(x => x.id === selectedEnId);
+    const fiItem = currentRightBatch.find(x => x.id === selectedFiId);
+    // Allow matching identical English or Finnish strings if duplicates exist
+    if (selectedEnId === selectedFiId || enItem.fi === fiItem.fi || enItem.en === fiItem.en) {
+      matchedIds.add(selectedEnId);
+      selectedEnId = null;
+      selectedFiId = null;
+      renderMatchMode();
+      if (matchedIds.size === currentLeftBatch.length) {
+        setTimeout(() => {
+          if (matchBatchIdx + 5 < matchPool.length) {
+            matchBatchIdx += 5;
+          } else {
+            matchBatchIdx = 0;
+          }
+          prepareMatchBatch();
+          renderMatchMode();
+        }, 450);
+      }
+      return;
+    } else {
+      const enEl = document.getElementById("en-card-" + selectedEnId);
+      const fiEl = document.getElementById("fi-card-" + selectedFiId);
+      if (enEl) enEl.classList.add("wrong");
+      if (fiEl) fiEl.classList.add("wrong");
+      selectedEnId = null;
+      selectedFiId = null;
+      setTimeout(() => renderMatchMode(), 380);
+      return;
+    }
+  }
+  renderMatchMode();
+}
+
+function prevMatchBatch() {
+  matchBatchIdx = Math.max(0, matchBatchIdx - 5);
+  prepareMatchBatch();
+  renderMatchMode();
+}
+function nextMatchBatch() {
+  matchBatchIdx = (matchBatchIdx + 5 < matchPool.length) ? matchBatchIdx + 5 : 0;
+  prepareMatchBatch();
+  renderMatchMode();
+}
+function shuffleMatchPool() {
+  matchPool = shuffle(matchPool);
+  matchBatchIdx = 0;
+  prepareMatchBatch();
+  renderMatchMode();
+}
+
+// ==================== 模式 2：看英语拼写芬兰语（出题静音，智能兼容判分） ====================
+function getAcceptableAnswers(rawFi) {
+  const full = rawFi.trim().toLowerCase();
+  const set = new Set([full]);
+  // Strip verb type (1)-(6) and Rektio (+ MIHIN etc.)
+  const stripped = full
+    .replace(/\([1-6]\)/g, "")
+    .replace(/\+\s*(mihin|mistä|missä|p|g|sta\/stä|lta\/ltä|maan\/mään|lle|ksi|kanssa)/gi, "")
+    .replace(/\bg\s*\+/g, "")
+    .replace(/\bp\s*\+/g, "")
+    .replace(/[.!?]+$/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (stripped) set.add(stripped);
+  // Split by = or / or , or -
+  full.split(/[=/,]/).forEach(part => {
+    const p = part.replace(/\([1-6]\)/g, "").trim();
+    if (p) set.add(p);
+  });
+  stripped.split(/[=/,]/).forEach(part => {
+    const p = part.trim();
+    if (p) set.add(p);
+  });
+  // Handle optional parentheses like (avio)mies or (sähköinen) allekirjoitus
+  if (/\([^)]+\)/.test(stripped)) {
+    set.add(stripped.replace(/\([^)]+\)/g, "").trim());
+    set.add(stripped.replace(/[()]/g, "").trim());
+  }
+  return [...set];
+}
+
+function renderSpellMode() {
+  const panel = document.getElementById("mainPanel");
+  const item = spellPool[spellIdx];
+  if (!item) return;
+
+  let structHint = "普通词汇 / 短语";
+  if (item.isVerb) structHint = "动词词条（可只输入芬兰语动词原形，或连同动词类型/支配格一起输入）";
+  else if (item.fi.includes("=")) structHint = "同义/口语转换词条（输入等号任一侧或完整等式均可）";
+  else if (item.fi.includes("+")) structHint = "支配格/后置词结构（可输入核心词或完整支配结构）";
+
+  panel.innerHTML = `
+    <div class="status-bar">
+      <div><b>模式 2：看英语默写芬兰语</b>（出题静音不提示发音，提交后可听标准发音）</div>
+      <div>
+        第 <b>${spellIdx + 1} / ${spellPool.length}</b> 词
+        <button onclick="spellPool=shuffle(spellPool);spellIdx=0;renderSpellMode();" style="margin-left:8px; padding:4px 10px;">🔀 随机抽题</button>
+      </div>
+    </div>
+    <div class="prompt-box">
+      <div class="prompt-tag">${escapeHtml(item.catName)} · ${structHint}</div>
+      <div class="prompt-main">${escapeHtml(item.en)}</div>
+      <div class="prompt-sub">请默写出对应的芬兰语：</div>
+    </div>
+    <div class="input-row">
+      <input type="text" id="spellInput" class="text-input" placeholder="输入芬兰语..." autocomplete="off"
+             onfocus="activeInputEl=this" onkeydown="if(event.key==='Enter') checkSpell()">
+    </div>
+    <div class="char-bar">
+      <button class="char-btn" onclick="insertChar('ä')">ä</button>
+      <button class="char-btn" onclick="insertChar('ö')">ö</button>
+      <button class="char-btn" onclick="insertChar('å')">å</button>
+      <button class="char-btn" onclick="insertChar('=')">=</button>
+      <button class="char-btn" onclick="insertChar('+')">+</button>
+    </div>
+    <div class="action-bar">
+      <button onclick="spellIdx=(spellIdx-1+spellPool.length)%spellPool.length;renderSpellMode()">⬅️ 上一词</button>
+      <button class="btn-primary" onclick="checkSpell()">✅ 检查拼写 (Enter)</button>
+      <button onclick="spellIdx=(spellIdx+1)%spellPool.length;renderSpellMode()">➡️ 下一词</button>
+    </div>
+    <div class="feedback-box" id="spellFeedback"></div>
+  `;
+  setTimeout(() => {
+    const inp = document.getElementById("spellInput");
+    if (inp) { inp.focus(); activeInputEl = inp; }
+  }, 30);
+}
+
+function checkSpell() {
+  const item = spellPool[spellIdx];
+  const inp = document.getElementById("spellInput");
+  const fb = document.getElementById("spellFeedback");
+  const val = inp.value.trim().toLowerCase().replace(/[.!?]+$/g, "");
+  const acceptable = getAcceptableAnswers(item.fi);
+  const isOk = val.length > 0 && acceptable.includes(val);
+
+  inp.classList.remove("ok", "err");
+  inp.classList.add(isOk ? "ok" : "err");
+  speakText(item.fi);
+
+  let extraGrammar = "";
+  if (item.isVerb) {
+    extraGrammar = `<div style="margin-top:8px; font-size:0.9rem; color:#1e40af;">
+      <b>动词档案：</b>类型 <b>(${item.verb.vtype})</b> | K-P-T: <b>${item.verb.kpt}</b> | 现在时: <b>${item.verb.mina}</b> | 过去时: <b>${item.verb.past}</b> | NUT分词: <b>${item.verb.nut}</b> | TU分词: <b>${item.verb.tu}</b>
+    </div>`;
+  } else if (item.isNominal) {
+    extraGrammar = `<div style="margin-top:8px; font-size:0.9rem; color:#1e40af;">
+      <b>变格档案：</b>单数部分格 (PtV): <b>${item.nominal.sg_part}</b> | 单数属格 (Gen): <b>${item.nominal.sg_gen}</b> | 复数部分格: <b>${item.nominal.pl_part}</b>
+    </div>`;
+  }
+
+  fb.className = "feedback-box show";
+  fb.innerHTML = `
+    <div style="font-weight:700; font-size:1.05rem; color:${isOk ? 'var(--success)' : 'var(--error)'};">
+      ${isOk ? '🎉 拼写完全正确！' : '❌ 拼写有出入，请核对长短元音与单双辅音：'}
+    </div>
+    <div style="margin-top:6px; font-size:1.1rem;">
+      词表完整写法：<b>${escapeHtml(item.fi)}</b>
+      <button class="tts-mini" onclick="speakText(${JSON.stringify(item.fi).replace(/"/g, '&quot;')})">🔊 朗读</button>
+    </div>
+    ${extraGrammar}
+  `;
+}
+
+// ==================== 模式 3：部分格与属格变形 (Partitiivi & Genetiivi) ====================
+function renderNominalMode() {
+  const panel = document.getElementById("mainPanel");
+  if (!nomPool.length) {
+    panel.innerHTML = `<p>当前小节没有可变形的名词/形容词/代词（如 Pikkusanat 纯副词小节），请在顶部切换其他小节。</p>`;
+    return;
+  }
+  const item = nomPool[nomIdx];
+  panel.innerHTML = `
+    <div class="status-bar">
+      <div><b>模式 3：名词/形容词/代词 部分格与属格变形</b></div>
+      <div>
+        第 <b>${nomIdx + 1} / ${nomPool.length}</b> 词
+        <button onclick="nomPool=shuffle(nomPool);nomIdx=0;renderNominalMode();" style="margin-left:8px; padding:4px 10px;">🔀 随机抽查</button>
+      </div>
+    </div>
+    <div class="check-filters">
+      <label><input type="checkbox" ${includePlPart ? 'checked' : ''} onchange="includePlPart=this.checked;renderNominalMode()"> 同时加练【复数部分格 (Monikon partitiivi)】</label>
+    </div>
+    <div class="prompt-box">
+      <div class="prompt-tag">${escapeHtml(item.catName)}</div>
+      <div class="prompt-main">
+        ${escapeHtml(item.fi)}
+        <button class="tts-mini" onclick="speakText(${JSON.stringify(item.fi).replace(/"/g, '&quot;')})">🔊</button>
+      </div>
+      <div class="prompt-sub">${escapeHtml(item.en)}</div>
+    </div>
+    <div class="input-row">
+      <div class="field-group">
+        <div class="field-label"><span>1. Partitiivi (单数部分格；若原词为复数节庆词则填复数部分格)</span></div>
+        <input type="text" id="nomPtV" class="text-input" placeholder="输入部分格形式..." autocomplete="off" onfocus="activeInputEl=this">
+      </div>
+      <div class="field-group">
+        <div class="field-label"><span>2. Genetiivi (单数属格；若原词为复数节庆词则填复数属格)</span></div>
+        <input type="text" id="nomGen" class="text-input" placeholder="输入属格形式..." autocomplete="off" onfocus="activeInputEl=this"
+               onkeydown="if(event.key==='Enter' && !${includePlPart}) checkNominal()">
+      </div>
+      ${includePlPart ? `
+      <div class="field-group">
+        <div class="field-label"><span>3. Monikon partitiivi (复数部分格)</span></div>
+        <input type="text" id="nomPlPtV" class="text-input" placeholder="输入复数部分格形式..." autocomplete="off" onfocus="activeInputEl=this"
+               onkeydown="if(event.key==='Enter') checkNominal()">
+      </div>` : ''}
+    </div>
+    <div class="char-bar">
+      <button class="char-btn" onclick="insertChar('ä')">ä</button>
+      <button class="char-btn" onclick="insertChar('ö')">ö</button>
+      <button class="char-btn" onclick="insertChar('å')">å</button>
+    </div>
+    <div class="action-bar">
+      <button onclick="nomIdx=(nomIdx-1+nomPool.length)%nomPool.length;renderNominalMode()">⬅️ 上一词</button>
+      <button class="btn-primary" onclick="checkNominal()">✅ 批改变形</button>
+      <button onclick="nomIdx=(nomIdx+1)%nomPool.length;renderNominalMode()">➡️ 下一词</button>
+    </div>
+    <div class="feedback-box" id="nomFeedback"></div>
+  `;
+  setTimeout(() => {
+    const inp = document.getElementById("nomPtV");
+    if (inp) { inp.focus(); activeInputEl = inp; }
+  }, 30);
+}
+
+function matchMultiAnswer(userVal, targetStr) {
+  const u = userVal.trim().toLowerCase();
+  if (!u) return false;
+  const targets = targetStr.toLowerCase().split("|").map(s => s.trim());
+  if (targets.includes(u)) return true;
+  // Also allow without optional parens
+  for (const t of targets) {
+    if (t.replace(/\([^)]+\)/g, "").trim() === u) return true;
+    if (t.replace(/[()]/g, "").trim() === u) return true;
+  }
+  return false;
+}
+
+function checkNominal() {
+  const item = nomPool[nomIdx];
+  const n = item.nominal;
+  const pEl = document.getElementById("nomPtV");
+  const gEl = document.getElementById("nomGen");
+  const plEl = document.getElementById("nomPlPtV");
+
+  const pOk = matchMultiAnswer(pEl.value, n.sg_part);
+  const gOk = matchMultiAnswer(gEl.value, n.sg_gen);
+  pEl.className = "text-input " + (pOk ? "ok" : "err");
+  gEl.className = "text-input " + (gOk ? "ok" : "err");
+
+  let plOk = true;
+  if (includePlPart && plEl) {
+    plOk = matchMultiAnswer(plEl.value, n.pl_part);
+    plEl.className = "text-input " + (plOk ? "ok" : "err");
+  }
+
+  const fb = document.getElementById("nomFeedback");
+  fb.className = "feedback-box show";
+  fb.innerHTML = `
+    <div style="font-weight:700; color:${(pOk && gOk && plOk) ? 'var(--success)' : 'var(--error)'};">
+      ${(pOk && gOk && plOk) ? '🎉 变形全部正确！' : '💡 标准变形与语法考试解析：'}
+    </div>
+    <div style="margin-top:8px; display:grid; gap:6px;">
+      <div>• <b>Partitiivi (部分格)：</b> <span style="color:#0f172a;font-weight:700;">${escapeHtml(n.sg_part)}</span>
+        <button class="tts-mini" onclick="speakText(${JSON.stringify(n.sg_part.split('|')[0]).replace(/"/g, '&quot;')})">🔊</button>
+      </div>
+      <div>• <b>Genetiivi (属格)：</b> <span style="color:#0f172a;font-weight:700;">${escapeHtml(n.sg_gen)}</span>
+        <button class="tts-mini" onclick="speakText(${JSON.stringify(n.sg_gen.split('|')[0]).replace(/"/g, '&quot;')})">🔊</button>
+      </div>
+      <div>• <b>Monikon partitiivi (复数部分格)：</b> <span style="color:#0f172a;font-weight:700;">${escapeHtml(n.pl_part)}</span>
+        <button class="tts-mini" onclick="speakText(${JSON.stringify(n.pl_part.split('|')[0]).replace(/"/g, '&quot;')})">🔊</button>
+      </div>
+      <div style="margin-top:4px; padding:8px 12px; background:#eff6ff; border-left:4px solid #2563eb; border-radius:4px; font-size:0.9rem;">
+        📌 <b>考试变形规律：</b>${escapeHtml(n.hint)}
+      </div>
+    </div>
+  `;
+}
+
+// ==================== 模式 4：动词类型、时态与 5 大分词变形 ====================
+function renderVerbMode() {
+  const panel = document.getElementById("mainPanel");
+  if (!verbPool.length) {
+    panel.innerHTML = `<p>当前小节没有动词词条（如纯名词小节），请在顶部切换含动词的小节或选择“全部 11 个小节合集”。</p>`;
+    return;
+  }
+  const item = verbPool[verbIdx];
+  const v = item.verb;
+
+  panel.innerHTML = `
+    <div class="status-bar">
+      <div><b>模式 4：动词类型、现在/过去时与 5 大分词矩阵</b></div>
+      <div>
+        第 <b>${verbIdx + 1} / ${verbPool.length}</b> 个动词
+        <button onclick="verbPool=shuffle(verbPool);verbIdx=0;renderVerbMode();" style="margin-left:8px; padding:4px 10px;">🔀 随机抽查</button>
+      </div>
+    </div>
+    <div class="check-filters">
+      <span><b>勾选练习项：</b></span>
+      <label><input type="checkbox" ${verbChecks.vtype ? 'checked' : ''} onchange="verbChecks.vtype=this.checked;renderVerbMode()"> 动词类型 (1-4)</label>
+      <label><input type="checkbox" ${verbChecks.tense ? 'checked' : ''} onchange="verbChecks.tense=this.checked;renderVerbMode()"> 现在时(minä) & 过去时(hän)</label>
+      <label><input type="checkbox" ${verbChecks.nut ? 'checked' : ''} onchange="verbChecks.nut=this.checked;renderVerbMode()"> NUT-主动过去分词</label>
+      <label><input type="checkbox" ${verbChecks.tu ? 'checked' : ''} onchange="verbChecks.tu=this.checked;renderVerbMode()"> TU-被动过去分词</label>
+      <label><input type="checkbox" ${verbChecks.va ? 'checked' : ''} onchange="verbChecks.va=this.checked;renderVerbMode()"> VA-主动现在分词</label>
+      <label><input type="checkbox" ${verbChecks.tava ? 'checked' : ''} onchange="verbChecks.tava=this.checked;renderVerbMode()"> TAVA-被动现在分词</label>
+      <label><input type="checkbox" ${verbChecks.ma ? 'checked' : ''} onchange="verbChecks.ma=this.checked;renderVerbMode()"> MA-施事分词</label>
+    </div>
+    <div class="prompt-box">
+      <div class="prompt-tag">${escapeHtml(item.catName)}</div>
+      <div class="prompt-main">
+        ${escapeHtml(v.base)}
+        <button class="tts-mini" onclick="speakText(${JSON.stringify(v.base).replace(/"/g, '&quot;')})">🔊</button>
+      </div>
+      <div class="prompt-sub">${escapeHtml(item.en)} <span style="color:#2563eb; font-weight:600; margin-left:6px;">[原表词条: ${escapeHtml(item.fi.replace(/\([1-6]\)/g, '(?)'))}]</span></div>
+    </div>
+    <div class="input-row">
+      ${verbChecks.vtype ? `
+      <div class="field-group">
+        <div class="field-label"><span>动词类型 (Verbityyppi：输入数字 1, 2, 3 或 4)</span></div>
+        <input type="text" id="v-type" class="text-input" placeholder="例如: 1 或 4" onfocus="activeInputEl=this">
+      </div>` : ''}
+      ${verbChecks.tense ? `
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+        <div class="field-group">
+          <div class="field-label"><span>现在时 (minä ___)</span></div>
+          <input type="text" id="v-mina" class="text-input" placeholder="minä..." onfocus="activeInputEl=this">
+        </div>
+        <div class="field-group">
+          <div class="field-label"><span>过去时 Imperfekti (hän ___)</span></div>
+          <input type="text" id="v-past" class="text-input" placeholder="hän (-i / -si)..." onfocus="activeInputEl=this">
+        </div>
+      </div>` : ''}
+      ${verbChecks.nut ? `
+      <div class="field-group">
+        <div class="field-label"><span>主动过去分词 (NUT-partisiippi: -nut/-nyt/-llut/-nnyt)</span></div>
+        <input type="text" id="v-nut" class="text-input" placeholder="例如: lukenut / huomannut / suunnitellut" onfocus="activeInputEl=this">
+      </div>` : ''}
+      ${verbChecks.tu ? `
+      <div class="field-group">
+        <div class="field-label"><span>被动过去分词 (TU-partisiippi: -ttu/-tty/-tu/-ty，注意弱级与 -aa→-ettu)</span></div>
+        <input type="text" id="v-tu" class="text-input" placeholder="例如: luettu / ilmoitettu / suunniteltu" onfocus="activeInputEl=this">
+      </div>` : ''}
+      ${verbChecks.va ? `
+      <div class="field-group">
+        <div class="field-label"><span>主动现在分词 (VA-partisiippi: -va/-vä)</span></div>
+        <input type="text" id="v-va" class="text-input" placeholder="例如: lukeva / suunnitteleva" onfocus="activeInputEl=this">
+      </div>` : ''}
+      ${verbChecks.tava ? `
+      <div class="field-group">
+        <div class="field-label"><span>被动现在分词 (TAVA-partisiippi: -ttava/-ttävä/-tava/-tävä)</span></div>
+        <input type="text" id="v-tava" class="text-input" placeholder="例如: luettava / ilmoitettava" onfocus="activeInputEl=this">
+      </div>` : ''}
+      ${verbChecks.ma ? `
+      <div class="field-group">
+        <div class="field-label"><span>施事分词 (MA-partisiippi / Agenttipartisiippi: -ma/-mä)</span></div>
+        <input type="text" id="v-ma" class="text-input" placeholder="例如: lukema / suunnittelema" onfocus="activeInputEl=this">
+      </div>` : ''}
+    </div>
+    <div class="char-bar">
+      <button class="char-btn" onclick="insertChar('ä')">ä</button>
+      <button class="char-btn" onclick="insertChar('ö')">ö</button>
+      <button class="char-btn" onclick="insertChar('å')">å</button>
+    </div>
+    <div class="action-bar">
+      <button onclick="verbIdx=(verbIdx-1+verbPool.length)%verbPool.length;renderVerbMode()">⬅️ 上一动词</button>
+      <button class="btn-primary" onclick="checkVerb()">✅ 批改动词变形</button>
+      <button onclick="verbIdx=(verbIdx+1)%verbPool.length;renderVerbMode()">➡️ 下一动词</button>
+    </div>
+    <div class="feedback-box" id="verbFeedback"></div>
+  `;
+}
+
+function checkVerb() {
+  const item = verbPool[verbIdx];
+  const v = item.verb;
+  const pairs = [
+    ["v-type", v.vtype, verbChecks.vtype],
+    ["v-mina", v.mina, verbChecks.tense],
+    ["v-past", v.past, verbChecks.tense],
+    ["v-nut", v.nut, verbChecks.nut],
+    ["v-tu", v.tu, verbChecks.tu],
+    ["v-va", v.va, verbChecks.va],
+    ["v-tava", v.tava, verbChecks.tava],
+    ["v-ma", v.ma, verbChecks.ma]
+  ];
+  let allOk = true;
+  pairs.forEach(([id, ans, active]) => {
+    if (!active) return;
+    const el = document.getElementById(id);
+    if (!el) return;
+    const ok = matchMultiAnswer(el.value, ans);
+    if (!ok) allOk = false;
+    el.className = "text-input " + (ok ? "ok" : "err");
+  });
+
+  const fb = document.getElementById("verbFeedback");
+  fb.className = "feedback-box show";
+  fb.innerHTML = `
+    <div style="font-weight:700; color:${allOk ? 'var(--success)' : 'var(--error)'};">
+      ${allOk ? '🎉 动词变形全部正确！' : '💡 动词全套变形标准答案：'}
+    </div>
+    <div style="margin-top:8px; display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:6px; font-size:0.92rem;">
+      <div>• <b>动词类型：</b>Type ${v.vtype} (${v.kpt})</div>
+      <div>• <b>现在时 (minä)：</b><b>${v.mina}</b> <button class="tts-mini" onclick="speakText('${v.mina.split('|')[0]}')">🔊</button></div>
+      <div>• <b>过去时 (hän)：</b><b>${v.past}</b> <button class="tts-mini" onclick="speakText('${v.past.split('|')[0]}')">🔊</button></div>
+      <div>• <b>NUT (主动过去)：</b><b>${v.nut}</b> <button class="tts-mini" onclick="speakText('${v.nut.split('|')[0]}')">🔊</button></div>
+      <div>• <b>TU (被动过去)：</b><b>${v.tu}</b> <button class="tts-mini" onclick="speakText('${v.tu.split('|')[0]}')">🔊</button></div>
+      <div>• <b>VA (主动现在)：</b><b>${v.va}</b> <button class="tts-mini" onclick="speakText('${v.va.split('|')[0]}')">🔊</button></div>
+      <div>• <b>TAVA (被动现在)：</b><b>${v.tava}</b> <button class="tts-mini" onclick="speakText('${v.tava.split('|')[0]}')">🔊</button></div>
+      <div>• <b>MA (施事分词)：</b><b>${v.ma}</b> <button class="tts-mini" onclick="speakText('${v.ma.split('|')[0]}')">🔊</button></div>
+    </div>
+    <div style="margin-top:8px; padding:8px 12px; background:#eff6ff; border-left:4px solid #2563eb; border-radius:4px; font-size:0.9rem;">
+      📌 <b>语法提示：</b>${escapeHtml(v.hint)}
+    </div>
+  `;
+}
+
+// ==================== 模式 5：支配格与句型特训 (Rektio) ====================
+function renderRektioMode() {
+  const panel = document.getElementById("mainPanel");
+  const r = rektioPool[rektioIdx];
+  panel.innerHTML = `
+    <div class="status-bar">
+      <div><b>模式 5：支配格 (Rektio) 与考试真题造句变形填空</b></div>
+      <div>
+        第 <b>${rektioIdx + 1} / ${rektioPool.length}</b> 题
+        <button onclick="rektioPool=shuffle(rektioPool);rektioIdx=0;renderRektioMode();" style="margin-left:8px; padding:4px 10px;">🔀 随机抽题</button>
+      </div>
+    </div>
+    <div class="prompt-box">
+      <div class="prompt-tag">词表考点结构：${escapeHtml(r.rule)} (${escapeHtml(r.en)})</div>
+      <div class="prompt-main" style="font-size:1.35rem;">${escapeHtml(r.sentence)}</div>
+      <div class="prompt-sub">请根据前面的支配动词或后置词，将括号内的词变形填入下方：</div>
+    </div>
+    <div class="input-row">
+      <input type="text" id="rektioInput" class="text-input" placeholder="输入括号内单词的正确变格/不定式形式..." autocomplete="off"
+             onfocus="activeInputEl=this" onkeydown="if(event.key==='Enter') checkRektio()">
+    </div>
+    <div class="char-bar">
+      <button class="char-btn" onclick="insertChar('ä')">ä</button>
+      <button class="char-btn" onclick="insertChar('ö')">ö</button>
+      <button class="char-btn" onclick="insertChar('å')">å</button>
+    </div>
+    <div class="action-bar">
+      <button onclick="rektioIdx=(rektioIdx-1+rektioPool.length)%rektioPool.length;renderRektioMode()">⬅️ 上一题</button>
+      <button class="btn-primary" onclick="checkRektio()">✅ 批改填空 (Enter)</button>
+      <button onclick="rektioIdx=(rektioIdx+1)%rektioPool.length;renderRektioMode()">➡️ 下一题</button>
+    </div>
+    <div class="feedback-box" id="rektioFeedback"></div>
+  `;
+  setTimeout(() => {
+    const inp = document.getElementById("rektioInput");
+    if (inp) { inp.focus(); activeInputEl = inp; }
+  }, 30);
+}
+
+function checkRektio() {
+  const r = rektioPool[rektioIdx];
+  const inp = document.getElementById("rektioInput");
+  const ok = matchMultiAnswer(inp.value, r.ans);
+  inp.className = "text-input " + (ok ? "ok" : "err");
+  const fullSentence = r.sentence.replace("___", r.ans.split("|")[0].trim()).replace(/\([^)]+\)/g, "");
+  speakText(fullSentence);
+
+  const fb = document.getElementById("rektioFeedback");
+  fb.className = "feedback-box show";
+  fb.innerHTML = `
+    <div style="font-weight:700; color:${ok ? 'var(--success)' : 'var(--error)'};">
+      ${ok ? '🎉 支配格变形完全正确！' : '❌ 变形有误，请看支配格解析：'}
+    </div>
+    <div style="margin-top:6px;">• <b>标准答案：</b><b>${escapeHtml(r.ans)}</b> <button class="tts-mini" onclick="speakText(${JSON.stringify(fullSentence).replace(/"/g, '&quot;')})">🔊 朗读整句</button></div>
+    <div style="margin-top:6px; color:#1e40af; font-size:0.92rem;">📌 <b>支配规则：</b>${escapeHtml(r.note)}</div>
+  `;
+}
+
+// ==================== 模式 6：本节词表与全变形总览 ====================
+function renderListMode() {
+  const panel = document.getElementById("mainPanel");
+  const items = getFilteredItems();
+  panel.innerHTML = `
+    <div class="status-bar">
+      <div><b>📚 当前小节完整词表与语法变形速查表（共 ${items.length} 词）</b></div>
+    </div>
+    <div style="overflow-x:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>芬兰语 (点击发音)</th>
+            <th>英语翻译</th>
+            <th>部分格/属格 或 动词分词变形</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${items.map((it, idx) => {
+            let morph = `<span style="color:#64748b;">副词 / 句型 / 固定表达</span>`;
+            if (it.isVerb) {
+              const v = it.verb;
+              morph = `<b>Type ${v.vtype}</b> (${v.kpt}) | minä <b>${v.mina}</b>, hän <b>${v.past}</b> | NUT: <b>${v.nut}</b> | TU: <b>${v.tu}</b> | VA: <b>${v.va}</b> | TAVA: <b>${v.tava}</b>`;
+            } else if (it.isNominal) {
+              const n = it.nominal;
+              morph = `PtV: <b>${n.sg_part}</b> | Gen: <b>${n.sg_gen}</b> | Pl.PtV: <b>${n.pl_part}</b>`;
+            }
+            return `
+              <tr>
+                <td>${idx + 1}</td>
+                <td style="font-weight:700; white-space:nowrap;">
+                  ${escapeHtml(it.fi)}
+                  <button class="tts-mini" onclick="speakText(${JSON.stringify(it.fi).replace(/"/g, '&quot;')})">🔊</button>
+                </td>
+                <td>${escapeHtml(it.en)}</td>
+                <td>${morph}</td>
+              </tr>
+            `;
+          }).join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+// ==================== 辅助工具与导入功能 ====================
+function insertChar(ch) {
+  if (!activeInputEl) return;
+  const start = activeInputEl.selectionStart || activeInputEl.value.length;
+  const end = activeInputEl.selectionEnd || activeInputEl.value.length;
+  const v = activeInputEl.value;
+  activeInputEl.value = v.slice(0, start) + ch + v.slice(end);
+  activeInputEl.focus();
+  activeInputEl.setSelectionRange(start + ch.length, start + ch.length);
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function toggleImportModal() {
+  const m = document.getElementById("importModal");
+  m.style.display = (m.style.display === "none") ? "flex" : "none";
+}
+
+function importTSV() {
+  const raw = document.getElementById("tsvInput").value.trim();
+  if (!raw) return;
+  const lines = raw.split(/\r?\n/);
+  let added = 0;
+  lines.forEach(line => {
+    const parts = line.split("\t");
+    if (parts.length >= 2) {
+      const fi = parts[0].trim();
+      const en = parts[1].trim();
+      const cat = (parts[2] || "自定义导入章节").trim();
+      if (fi.toLowerCase() === "finnish (suomi)") return;
+      let cIdx = CATEGORIES.indexOf(cat);
+      if (cIdx === -1) {
+        CATEGORIES.push(cat);
+        cIdx = CATEGORIES.length - 1;
+      }
+      RAW_ROWS.push([cIdx, fi, en]);
+      added++;
+    }
+  });
+  if (added > 0) {
+    rebuildItems();
+    initCategorySelect();
+    currentCat = String(CATEGORIES.length - 1);
+    document.getElementById("catSelect").value = currentCat;
+    resetPools();
+    renderCurrentMode();
+    toggleImportModal();
+    alert(`成功导入 ${added} 个新词条，并已自动生成格变与分词！`);
+  }
+}
+
+// 初始化启动
+initCategorySelect();
+resetPools();
+renderCurrentMode();
+</script>
+</body>
+</html>
