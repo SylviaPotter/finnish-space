@@ -3,7 +3,7 @@
 **Finnish Space** is your friendly companion for mastering Finnish vocabulary. The site contains two main learning tools:
 
 1. [Word Matching Game](https://sylviapotter.github.io/finnish-space/word_matching_game.html)  
-2. [Spelling Quiz](https://sylviapotter.github.io/finnish-space/finnish_spelling_quiz.html)
+2. [Spelling Quiz](https://sylviapotter.github.io/finnish-space/sanakoe1.html)
 3. https://sylviapotter.github.io/finnish-space/random_word_matching_game.html
 
 ---
